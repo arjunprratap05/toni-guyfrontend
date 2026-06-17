@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* The new v4 way of injecting premium brand colors and fonts */
+@theme {
+  --color-brand-black: #0a0a0a;
+  --color-brand-charcoal: #1a1a1a;
+  --color-brand-white: #fafafa;
+  --color-brand-gold: #C5A059;
+  
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+}
+
+/* Global resets */
+body {
+  background-color: var(--color-brand-black);
+  color: var(--color-brand-white);
+  margin: 0;
+  padding: 0;
+}
