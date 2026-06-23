@@ -5,6 +5,11 @@ import { Menu, X } from 'lucide-react';
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Helper function to close the menu
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <nav className="fixed w-full z-50 bg-brand-black/90 backdrop-blur-md border-b border-brand-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,7 +17,7 @@ const Navbar = () => {
           
           {/* Brand Logo */}
           <div className="flex-shrink-0">
-            <Link to="/" className="font-serif text-2xl tracking-widest text-brand-white">
+            <Link to="/" onClick={closeMobileMenu} className="font-serif text-2xl tracking-widest text-brand-white">
               TONI&GUY <span className="text-sm tracking-normal text-brand-gold ml-1">PATNA</span>
             </Link>
           </div>
@@ -50,15 +55,27 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-brand-black border-b border-brand-white/10">
           <div className="px-2 pt-2 pb-6 space-y-1 flex flex-col">
-            <Link to="/" className="block px-3 py-4 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 hover:text-brand-gold">
+            <Link 
+              to="/" 
+              onClick={closeMobileMenu} 
+              className="block px-3 py-4 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 hover:text-brand-gold"
+            >
               Home
             </Link>
-            <Link to="/services" className="block px-3 py-4 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 hover:text-brand-gold">
+            <Link 
+              to="/services" 
+              onClick={closeMobileMenu} 
+              className="block px-3 py-4 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 hover:text-brand-gold"
+            >
               Services
             </Link>
             
             <div className="px-4 mt-6">
-              <Link to="/booking" className="block w-full text-center px-6 py-4 bg-brand-gold text-brand-black text-sm uppercase tracking-widest font-semibold">
+              <Link 
+                to="/booking" 
+                onClick={closeMobileMenu} 
+                className="block w-full text-center px-6 py-4 bg-brand-gold text-brand-black text-sm uppercase tracking-widest font-semibold"
+              >
                 Book Appointment
               </Link>
             </div>
