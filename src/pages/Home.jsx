@@ -35,8 +35,8 @@ const heroSlides = [
     subtitle: "Premium grooming, now in the heart of Patna."
   },
   {
-    image: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=2074&auto=format&fit=crop",
-    subtitle: "Premium grooming, now in the heart of Patna."
+    image: "hero-3.jpeg",
+    subtitle: "Premium Salon, now in the heart of Patna."
   }
 ];
 
