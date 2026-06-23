@@ -16,25 +16,23 @@ const getCategoryIcon = (category) => {
   }
 };
 
-// Curated high-end salon assets for the Ambiance Gallery
+// Curated high-end salon assets for the Ambiance Gallery (Now using Videos!)
 const salonGallery = [
-  { id: 1, url: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=1200&auto=format&fit=crop", title: "The Styling Suite", tag: "Main Floor" },
-  { id: 2, url: "https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=1200&auto=format&fit=crop", title: "Bespoke Color Bar", tag: "Technical Zone" },
-  { id: 3, url: "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?q=80&w=1200&auto=format&fit=crop", title: "The Wash & Ritual Lounge", tag: "Spa Area" },
-  { id: 4, url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=1200&auto=format&fit=crop", title: "VIP Grooming Suite", tag: "Private Room" },
-  { id: 5, url: "https://images.unsplash.com/photo-1633681926035-ec1ac984418a?q=80&w=1200&auto=format&fit=crop", title: "Premium Editorial Care", tag: "Products" },
-  { id: 6, url: "https://images.unsplash.com/photo-1598257006458-087169a1f08d?q=80&w=1200&auto=format&fit=crop", title: "The Welcome Atelier", tag: "Reception" }
+  { id: 1, url: "/video-1.mp4", title: "Skin Care & Reception", tag: "Dermalogica Zone" },
+  { id: 2, url: "/video-2.mp4", title: "Premium Styling Station", tag: "Main Floor" },
+  { id: 3, url: "/video-3.mp4", title: "Private Spa & Facial Suite", tag: "Treatment Room" },
+  { id: 4, url: "/video-4.mp4", title: "The Wash & Ritual Lounge", tag: "Care Area" }
 ];
 
 // Hero Slider Data
 const heroSlides = [
   {
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2074&auto=format&fit=crop",
+    image: "/hero-1.jpeg",
     subtitle: "Experience world-class hairdressing and luxury care."
   },
   {
-    image: "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?q=80&w=2074&auto=format&fit=crop",
-    subtitle: "Bespoke coloring crafted by master technicians."
+    image: "/hero-2.jpeg",
+    subtitle: "Premium grooming, now in the heart of Patna."
   },
   {
     image: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=2074&auto=format&fit=crop",
@@ -43,7 +41,7 @@ const heroSlides = [
 ];
 
 const Home = () => {
-  const [activeImage, setActiveImage] = useState(null);
+  const [activeMedia, setActiveMedia] = useState(null);
   
   // --- Hero Slider State ---
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -54,7 +52,7 @@ const Home = () => {
       setCurrentSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
     }, 5000); // Changes every 5 seconds
 
-    return () => clearInterval(slideInterval); // Cleanup on unmount
+    return () => clearInterval(slideInterval); 
   }, []);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
@@ -82,7 +80,7 @@ const Home = () => {
     <div className="flex flex-col min-h-screen w-full bg-brand-black">
       
       {/* =========================================
-          UPDATED: HERO SLIDER SECTION
+          HERO SLIDER SECTION
           ========================================= */}
       <section className="relative h-[85vh] flex items-center justify-center w-full overflow-hidden group">
         
@@ -98,7 +96,6 @@ const Home = () => {
               className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] ease-linear"
               style={{ 
                 backgroundImage: `url('${slide.image}')`,
-                // Optional: Adds a very slow, subtle zoom effect to the background images
                 transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)' 
               }}
             ></div>
@@ -135,7 +132,7 @@ const Home = () => {
           </Link>
         </div>
 
-        {/* Manual Navigation Controls (Hidden by default, shown on hover on desktop) */}
+        {/* Manual Navigation Controls */}
         <button 
           onClick={prevSlide}
           className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 text-brand-white/50 hover:text-brand-gold hover:bg-brand-black/50 transition-all opacity-0 group-hover:opacity-100 hidden md:block border border-transparent hover:border-brand-gold/30 rounded-full"
@@ -216,7 +213,7 @@ const Home = () => {
       </section>
 
       {/* =========================================
-          THE SALON AMBIANCE GALLERY SECTION
+          THE SALON AMBIANCE GALLERY SECTION (NOW WITH VIDEO)
           ========================================= */}
       <section className="py-24 border-t border-brand-white/5 bg-brand-charcoal/30 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -230,26 +227,36 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {salonGallery.map((img) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {salonGallery.map((media) => (
               <div 
-                key={img.id}
-                onClick={() => setActiveImage(img)}
+                key={media.id}
+                onClick={() => setActiveMedia(media)}
                 className="group relative h-80 overflow-hidden border border-brand-white/10 cursor-zoom-in"
               >
-                <img 
-                  src={img.url} 
-                  alt={img.title}
+                <video 
+                  src={media.url} 
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                  loading="lazy"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
+                
+                {/* Play Icon overlay to indicate it's a video */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-16 h-16 rounded-full bg-brand-black/60 border border-brand-gold flex items-center justify-center">
+                    <div className="w-0 h-0 border-t-8 border-b-8 border-l-[14px] border-transparent border-l-brand-gold ml-2"></div>
+                  </div>
+                </div>
+
                 <div className="absolute bottom-0 left-0 w-full p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                   <span className="text-brand-gold font-sans text-xs uppercase tracking-widest block mb-1 opacity-70">
-                    {img.tag}
+                    {media.tag}
                   </span>
                   <h3 className="text-brand-white font-serif text-xl tracking-wide">
-                    {img.title}
+                    {media.title}
                   </h3>
                 </div>
               </div>
@@ -258,25 +265,27 @@ const Home = () => {
         </div>
       </section>
 
-      {/* FULL SCREEN EXPERIENTIAL LIGHTBOX */}
-      {activeImage && (
+      {/* FULL SCREEN EXPERIENTIAL LIGHTBOX (NOW HANDLES VIDEO) */}
+      {activeMedia && (
         <div className="fixed inset-0 z-50 bg-brand-black/95 flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300">
           <button 
-            onClick={() => setActiveImage(null)}
-            className="absolute top-6 right-6 text-brand-white/70 hover:text-brand-gold transition-colors p-2"
+            onClick={() => setActiveMedia(null)}
+            className="absolute top-6 right-6 text-brand-white/70 hover:text-brand-gold transition-colors p-2 z-50"
           >
             <X size={32} strokeWidth={1.5} />
           </button>
           
-          <div className="max-w-5xl max-h-[85vh] flex flex-col items-center">
-            <img 
-              src={activeImage.url} 
-              alt={activeImage.title} 
-              className="max-w-full max-h-[75vh] object-contain border border-brand-white/10 shadow-2xl"
+          <div className="max-w-5xl max-h-[85vh] flex flex-col items-center w-full">
+            <video 
+              src={activeMedia.url} 
+              className="w-full max-h-[75vh] object-contain border border-brand-white/10 shadow-2xl"
+              autoPlay
+              controls
+              playsInline
             />
             <div className="text-center mt-4 max-w-xl">
-              <span className="text-brand-gold text-xs uppercase tracking-widest font-sans">{activeImage.tag}</span>
-              <h4 className="text-brand-white text-2xl font-serif mt-1">{activeImage.title}</h4>
+              <span className="text-brand-gold text-xs uppercase tracking-widest font-sans">{activeMedia.tag}</span>
+              <h4 className="text-brand-white text-2xl font-serif mt-1">{activeMedia.title}</h4>
             </div>
           </div>
         </div>
