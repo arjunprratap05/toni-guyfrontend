@@ -1,9 +1,14 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Scissors, Sparkles, Droplets, Flower2, Smile, Star, X, ChevronLeft, ChevronRight } from 'lucide-react'; 
-import { servicesMenu } from './Services';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Scissors, Sparkles, Droplets, Flower2, Smile, Star, X, Play, ArrowRight } from 'lucide-react';
 
-// Helper function to dynamically assign icons based on the service category
+const fallbackServices = [
+  { id: 1, category: 'Hair Cut & Styling', name: 'Artistic Haircut', price: '1,800', description: 'Bespoke structural precision tailored to your bone structure.' },
+  { id: 2, category: 'Hair Color', name: 'Signature Balayage', price: '7,500', description: 'Hand-painted, seamless multi-tonal dimension.' },
+  { id: 3, category: 'Hair Treatment', name: 'Keratin Infusion', price: '6,500', description: 'Deep structural alignment to eliminate frizz.' },
+];
+
 const getCategoryIcon = (category) => {
   switch (category) {
     case 'Hair Cut & Styling': return Scissors;
@@ -16,283 +21,193 @@ const getCategoryIcon = (category) => {
   }
 };
 
-// Curated high-end salon assets for the Ambiance Gallery (Now using Videos!)
 const salonGallery = [
-  { id: 1, url: "/video-1.mp4", title: "Skin Care & Reception", tag: "Dermalogica Zone" },
-  { id: 2, url: "/video-2.mp4", title: "Premium Styling Station", tag: "Main Floor" },
-  { id: 3, url: "/video-3.mp4", title: "Private Spa & Facial Suite", tag: "Treatment Room" },
-  { id: 4, url: "/video-4.mp4", title: "The Wash & Ritual Lounge", tag: "Care Area" }
+  { id: 1, url: "/video-1.mp4", type: "video", title: "Dermalogica Zone", span: "col-span-12 md:col-span-8 row-span-2" },
+  { id: 2, url: "/hero-image1.jpeg", type: "image", title: "Main Floor", span: "col-span-12 md:col-span-4 row-span-1" },
+  { id: 3, url: "/hero-image2.jpeg", type: "image", title: "Treatment Room", span: "col-span-12 md:col-span-4 row-span-1" }
 ];
 
-// Hero Slider Data
-const heroSlides = [
-  {
-    image: "/hero-1.jpeg",
-    subtitle: "Experience world-class hairdressing and luxury care."
-  },
-  {
-    image: "/hero-2.jpeg",
-    subtitle: "Premium grooming, now in the heart of Patna."
-  },
-  {
-    image: "hero-3.jpeg",
-    subtitle: "Premium Salon, now in the heart of Patna."
-  }
-];
+// --- Animation Variants ---
+const fadeUp = {
+  hidden: { opacity: 0, y: 50 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } }
+};
 
-const Home = () => {
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.25 } }
+};
+
+export default function HomeFabulous() {
   const [activeMedia, setActiveMedia] = useState(null);
-  
-  // --- Hero Slider State ---
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Auto-play logic for the hero slider
-  useEffect(() => {
-    const slideInterval = setInterval(() => {
-      setCurrentSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
-    }, 5000); // Changes every 5 seconds
-
-    return () => clearInterval(slideInterval); 
-  }, []);
-
-  const nextSlide = () => setCurrentSlide((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1));
-  const prevSlide = () => setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1));
-
-  // Dynamic Signature Services logic
-  const dailySignatureServices = useMemo(() => {
-    const today = new Date();
-    const dayOfYear = Math.floor(
-      (today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
-    );
-
-    const selectedServices = [];
-    const totalServices = servicesMenu.length;
-
-    for (let i = 0; i < 3; i++) {
-      const selectedIndex = (dayOfYear * 7 + i * 13) % totalServices;
-      selectedServices.push(servicesMenu[selectedIndex]);
-    }
-
-    return selectedServices;
-  }, []);
+  const dailySignatureServices = useMemo(() => fallbackServices, []);
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-brand-black">
+    <div className="flex flex-col min-h-screen w-full bg-rose-50 font-sans overflow-hidden">
       
-      {/* =========================================
-          HERO SLIDER SECTION
-          ========================================= */}
-      <section className="relative h-[85vh] flex items-center justify-center w-full overflow-hidden group">
+      {/* 1. GLASSMORPHISM HERO */}
+      <section className="relative min-h-screen flex items-center justify-center w-full overflow-hidden">
         
-        {/* Background Slider Container */}
-        {heroSlides.map((slide, index) => (
-          <div 
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              index === currentSlide ? 'opacity-100 z-0' : 'opacity-0 -z-10'
-            }`}
-          >
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] ease-linear"
-              style={{ 
-                backgroundImage: `url('${slide.image}')`,
-                transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)' 
-              }}
-            ></div>
-            {/* Dark Overlay for Text Readability */}
-            <div className="absolute inset-0 bg-brand-black/70"></div>
-          </div>
-        ))}
-
-        {/* Static Text Content overlaying the slider */}
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto mt-16 pointer-events-none">
-          <h1 className="text-5xl md:text-7xl font-serif text-brand-white mb-6 tracking-wide leading-tight drop-shadow-lg">
-            Elevate Your <span className="text-brand-gold italic">Style</span>
-          </h1>
-          
-          {/* Dynamic subtitle based on current slide */}
-          <div className="h-8 mb-10 overflow-hidden relative max-w-2xl mx-auto">
-            {heroSlides.map((slide, index) => (
-              <p 
-                key={index}
-                className={`absolute inset-0 text-lg md:text-xl font-sans text-brand-white/80 font-light tracking-wider leading-relaxed transition-all duration-700 ${
-                  index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                }`}
-              >
-                {slide.subtitle}
-              </p>
-            ))}
-          </div>
-
-          <Link 
-            to="/booking" 
-            className="inline-block pointer-events-auto px-10 py-4 bg-brand-gold text-brand-black font-sans text-sm uppercase tracking-widest font-bold hover:bg-brand-white hover:scale-105 transition-all duration-300 shadow-lg"
-          >
-            Reserve Your Chair
-          </Link>
+        {/* Full Screen Background Video */}
+        <div className="absolute inset-0 w-full h-full">
+          <video 
+            src="/video-1.mp4" 
+            autoPlay loop muted playsInline
+            className="w-full h-full object-cover scale-105"
+          />
+          {/* Vibrant Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/60 via-purple-900/40 to-rose-900/60 mix-blend-multiply" />
         </div>
 
-        {/* Manual Navigation Controls */}
-        <button 
-          onClick={prevSlide}
-          className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 text-brand-white/50 hover:text-brand-gold hover:bg-brand-black/50 transition-all opacity-0 group-hover:opacity-100 hidden md:block border border-transparent hover:border-brand-gold/30 rounded-full"
+        {/* Floating Frosted Glass Content Card */}
+        <motion.div 
+          initial="hidden" animate="visible" variants={staggerContainer}
+          className="relative z-10 w-[90%] max-w-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-10 md:p-16 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] text-center mt-20"
         >
-          <ChevronLeft size={32} strokeWidth={1} />
-        </button>
-        
-        <button 
-          onClick={nextSlide}
-          className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 text-brand-white/50 hover:text-brand-gold hover:bg-brand-black/50 transition-all opacity-0 group-hover:opacity-100 hidden md:block border border-transparent hover:border-brand-gold/30 rounded-full"
-        >
-          <ChevronRight size={32} strokeWidth={1} />
-        </button>
+          <motion.span variants={fadeUp} className="text-pink-300 uppercase tracking-[0.4em] text-[11px] font-bold mb-6 block drop-shadow-md">
+            Toni & Guy , Frazer Road Patna
+          </motion.span>
+          
+          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-serif text-white mb-6 leading-none tracking-tight drop-shadow-lg">
+            Elevate <br />
+            <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-amber-200">Your Style.</span>
+          </motion.h1>
+          
+          <motion.p variants={fadeUp} className="text-white/90 font-light text-sm md:text-base tracking-wide leading-relaxed mb-10 max-w-lg mx-auto">
+            Experience global hairdressing standards and absolute luxury in a vibrant architectural space designed exclusively for your transformation.
+          </motion.p>
+          
+          <motion.div variants={fadeUp}>
+            <Link to="/booking" className="group inline-flex items-center gap-4 px-10 py-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[12px] uppercase tracking-[0.2em] font-bold rounded-full hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] hover:scale-105 transition-all duration-500">
+              Reserve Your Chair
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+            </Link>
+          </motion.div>
+        </motion.div>
+      </section>
 
-        {/* Minimalist Dot Indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`transition-all duration-300 rounded-full ${
-                index === currentSlide 
-                  ? 'w-8 h-1.5 bg-brand-gold' 
-                  : 'w-2 h-1.5 bg-brand-white/30 hover:bg-brand-white/60'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
+      {/* 2. THE ETHOS */}
+      <section className="py-32 md:py-48 px-6 bg-indigo-950 text-center flex flex-col items-center">
+        <motion.div 
+          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}
+        >
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif text-white max-w-5xl leading-tight">
+            "Beauty is not a metric. It is a <span className="italic text-pink-400">feeling of absolute confidence</span> cultivated through expert craftsmanship."
+          </h2>
+          <div className="w-20 h-[2px] bg-gradient-to-r from-pink-500 to-amber-300 mx-auto mt-16 rounded-full"></div>
+        </motion.div>
+      </section>
+
+      {/* 3. VIBRANT SIGNATURE SERVICES */}
+      <section className="py-24 px-6 lg:px-20 bg-rose-50">
+        <motion.div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
+        >
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 gap-6">
+            <motion.div variants={fadeUp}>
+              <span className="text-pink-500 text-[11px] tracking-[0.3em] uppercase font-bold block mb-4">Today's Recommendations</span>
+              <h2 className="text-4xl md:text-6xl font-serif text-indigo-950">Curated Treatments</h2>
+            </motion.div>
+            <motion.div variants={fadeUp}>
+              <Link to="/services" className="text-[12px] font-bold uppercase tracking-[0.2em] text-indigo-900 border-b-2 border-indigo-900 pb-1 hover:text-pink-500 hover:border-pink-500 transition-colors duration-300">
+                Explore Full Menu
+              </Link>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {dailySignatureServices.map((service, index) => {
+              const IconComponent = getCategoryIcon(service.category);
+              return (
+                <motion.div 
+                  key={index} variants={fadeUp}
+                  className="group relative bg-white p-12 hover:-translate-y-4 transition-all duration-500 cursor-pointer flex flex-col h-full rounded-3xl shadow-xl hover:shadow-[0_40px_80px_rgba(236,72,153,0.15)] overflow-hidden border border-rose-100"
+                >
+                  {/* Vibrant hover background fill */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+                  
+                  <IconComponent className="text-pink-500 mb-8 group-hover:scale-125 group-hover:text-amber-300 transition-transform duration-700 z-10" size={36} strokeWidth={1.5} />
+                  <h3 className="text-2xl font-serif text-indigo-950 group-hover:text-white mb-4 transition-colors duration-500 z-10">{service.name}</h3>
+                  <p className="text-slate-500 group-hover:text-pink-100 font-light text-sm leading-relaxed mb-12 flex-grow transition-colors duration-500 z-10">
+                    {service.description}
+                  </p>
+                  <span className="text-indigo-900 group-hover:text-amber-300 text-[11px] font-bold uppercase tracking-[0.2em] transition-colors duration-500 z-10">
+                    From ₹{service.price}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* 4. FULL COLOR IMMERSIVE GALLERY */}
+      <section className="py-32 px-6 lg:px-20 bg-white">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-16 text-center">
+          <span className="text-pink-500 text-[11px] tracking-[0.3em] uppercase font-bold block mb-4">Visual Journal</span>
+          <h2 className="text-4xl md:text-6xl font-serif text-indigo-950">The Ambiance</h2>
+        </motion.div>
+        
+        <div className="grid grid-cols-12 gap-6 auto-rows-[350px]">
+          {salonGallery.map((media) => (
+            <motion.div 
+              key={media.id}
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+              onClick={() => setActiveMedia(media)}
+              className={`relative group cursor-pointer overflow-hidden rounded-3xl shadow-lg ${media.span}`}
+            >
+              {media.type === 'video' ? (
+                <video src={media.url} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" autoPlay loop muted playsInline />
+              ) : (
+                <img src={media.url} alt={media.title} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
+              )}
+              
+              {/* Vibrant Tint Overlay on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/80 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-500"></div>
+              
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border border-white/50 flex items-center justify-center text-white transform scale-90 group-hover:scale-100 transition-transform duration-700 shadow-2xl">
+                  <Play fill="currentColor" size={24} className="ml-1 text-pink-400" />
+                </div>
+              </div>
+
+              <div className="absolute bottom-10 left-10 transform translate-y-6 group-hover:translate-y-0 transition-transform duration-700">
+                <h3 className="text-white font-serif text-3xl drop-shadow-md">{media.title}</h3>
+              </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
-      {/* =========================================
-          SIGNATURE SERVICES SECTION
-          ========================================= */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-serif text-brand-white mb-4">
-            Signature <span className="text-brand-gold italic">Treatments</span>
-          </h2>
-          <div className="h-0.5 w-24 bg-brand-gold mx-auto"></div>
-          <p className="text-brand-white/50 text-sm mt-4 font-sans tracking-widest uppercase">
-            Today's Hand-Picked Recommendations
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {dailySignatureServices.map((service, index) => {
-            const IconComponent = getCategoryIcon(service.category);
-            return (
-              <div 
-                key={`${service.id}-${index}`} 
-                className="group border border-brand-white/10 p-8 hover:border-brand-gold transition-colors duration-300 flex flex-col items-center text-center"
-              >
-                <IconComponent 
-                  className="text-brand-gold mb-6 group-hover:scale-110 transition-transform duration-300" 
-                  size={40} 
-                  strokeWidth={1} 
-                />
-                <h3 className="text-xl font-serif text-brand-white mb-3 tracking-wide">
-                  {service.name}
-                </h3>
-                <p className="text-brand-white/70 font-sans text-sm font-light leading-relaxed mb-6">
-                  {service.description}
-                </p>
-                <span className="text-brand-gold font-sans text-sm tracking-widest uppercase mt-auto">
-                  From ₹{service.price}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="text-center mt-12">
-          <Link to="/services" className="text-brand-white hover:text-brand-gold font-sans text-sm uppercase tracking-widest border-b border-brand-gold pb-1 transition-colors">
-            View Full Menu
-          </Link>
-        </div>
-      </section>
-
-      {/* =========================================
-          THE SALON AMBIANCE GALLERY SECTION (NOW WITH VIDEO)
-          ========================================= */}
-      <section className="py-24 border-t border-brand-white/5 bg-brand-charcoal/30 w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-serif text-brand-white mb-4">
-              Our <span className="text-brand-gold italic">Ambiance</span>
-            </h2>
-            <div className="h-0.5 w-24 bg-brand-gold mx-auto"></div>
-            <p className="text-brand-white/50 text-sm mt-4 font-sans tracking-widest uppercase">
-              Step Into Elite Luxury Architectural Space
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {salonGallery.map((media) => (
-              <div 
-                key={media.id}
-                onClick={() => setActiveMedia(media)}
-                className="group relative h-80 overflow-hidden border border-brand-white/10 cursor-zoom-in"
-              >
-                <video 
-                  src={media.url} 
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
-                
-                {/* Play Icon overlay to indicate it's a video */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-16 h-16 rounded-full bg-brand-black/60 border border-brand-gold flex items-center justify-center">
-                    <div className="w-0 h-0 border-t-8 border-b-8 border-l-[14px] border-transparent border-l-brand-gold ml-2"></div>
-                  </div>
-                </div>
-
-                <div className="absolute bottom-0 left-0 w-full p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <span className="text-brand-gold font-sans text-xs uppercase tracking-widest block mb-1 opacity-70">
-                    {media.tag}
-                  </span>
-                  <h3 className="text-brand-white font-serif text-xl tracking-wide">
-                    {media.title}
-                  </h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FULL SCREEN EXPERIENTIAL LIGHTBOX (NOW HANDLES VIDEO) */}
-      {activeMedia && (
-        <div className="fixed inset-0 z-50 bg-brand-black/95 flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300">
-          <button 
-            onClick={() => setActiveMedia(null)}
-            className="absolute top-6 right-6 text-brand-white/70 hover:text-brand-gold transition-colors p-2 z-50"
+      {/* 5. SMOOTH LIGHTBOX */}
+      <AnimatePresence>
+        {activeMedia && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-indigo-950/95 flex items-center justify-center p-4 lg:p-12 backdrop-blur-2xl"
           >
-            <X size={32} strokeWidth={1.5} />
-          </button>
-          
-          <div className="max-w-5xl max-h-[85vh] flex flex-col items-center w-full">
-            <video 
-              src={activeMedia.url} 
-              className="w-full max-h-[75vh] object-contain border border-brand-white/10 shadow-2xl"
-              autoPlay
-              controls
-              playsInline
-            />
-            <div className="text-center mt-4 max-w-xl">
-              <span className="text-brand-gold text-xs uppercase tracking-widest font-sans">{activeMedia.tag}</span>
-              <h4 className="text-brand-white text-2xl font-serif mt-1">{activeMedia.title}</h4>
-            </div>
-          </div>
-        </div>
-      )}
-
+            <button 
+              onClick={() => setActiveMedia(null)} 
+              className="absolute top-6 right-6 lg:top-10 lg:right-10 text-pink-300 hover:text-white transition-colors z-50 bg-white/10 p-3 rounded-full hover:bg-pink-500"
+            >
+              <X size={32} strokeWidth={2} />
+            </button>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} transition={{ duration: 0.5, type: "spring" }}
+              className="w-full max-w-6xl"
+            >
+              {activeMedia.type === 'video' ? (
+                <video src={activeMedia.url} className="w-full max-h-[75vh] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/10" autoPlay controls playsInline />
+              ) : (
+                <img src={activeMedia.url} alt={activeMedia.title} className="w-full max-h-[75vh] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-white/10" />
+              )}
+              <div className="text-center mt-10">
+                <h4 className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-amber-200 text-4xl font-serif">{activeMedia.title}</h4>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-};
-
-export default Home;
+}

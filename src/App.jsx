@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Stylists from './pages/Stylists';
 import Booking from './pages/Booking';
 import Services from './pages/Services';
+import About from './pages/About';
 
 function App() {
   return (
@@ -18,12 +19,12 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
-           
+            <Route path="/about" element={<About />} /> {/* <-- Added About route here */}
             <Route path="/booking" element={<Booking />} />
           </Routes>
         </main>
 
-        <Footer /> {/* <-- 2. Render Footer below main */}
+        <Footer /> 
       </div>
     </Router>
   );

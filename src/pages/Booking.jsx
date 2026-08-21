@@ -1,373 +1,466 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Calendar, Clock, CheckCircle, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Check, ChevronRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { servicesMenu } from './Services'; 
 
-// Import the master services menu from Services.jsx
-import { servicesMenu } from './Services';
-
-// --- NEW HELPER FUNCTION ---
-// Compares the selected date and time slot against the current real-world time
-const isSlotInPast = (selectedDateStr, timeStr) => {
-  if (!selectedDateStr) return false;
+export default function Booking() {
+  const [searchParams] = useSearchParams();
   
-  const now = new Date();
-  const [year, month, day] = selectedDateStr.split('-');
-  // Create a local date object
-  const slotDate = new Date(year, month - 1, day);
-  
-  // Parse the "10:00 AM" format
-  const [time, modifier] = timeStr.split(' ');
-  let [hours, minutes] = time.split(':');
-  hours = parseInt(hours, 10);
-  
-  // Convert to 24-hour time format
-  if (modifier === 'PM' && hours < 12) hours += 12;
-  if (modifier === 'AM' && hours === 12) hours = 0;
-  
-  slotDate.setHours(hours, parseInt(minutes, 10), 0, 0);
-  
-  // Return true if the slot's exact timestamp is older than right now
-  return slotDate < now;
-};
-
-const Booking = () => {
-  // State Management
+  // ==========================================
+  // STATE MANAGEMENT
+  // ==========================================
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('Hair Cut & Styling');
   
-  const [formData, setFormData] = useState({
-    service: null,
-    stylist: null,
-    date: '',
-    timeSlot: '',
-    clientName: '',
-    clientPhone: ''
-  });
+  const [selectedServiceId, setSelectedServiceId] = useState(searchParams.get('service') || null);
+  const [selectedArtist, setSelectedArtist] = useState('Any Available Artist');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
 
-  // Master Data
-  const stylists = [
-    { id: 'any', name: 'Any Available Artist', role: 'Next Available' }
-  ];
+  // Form Inputs
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  
+  // Submission States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const timeSlots = ['10:00 AM', '11:30 AM', '02:00 PM', '04:30 PM', '06:00 PM'];
+  const [availableTimeslots, setAvailableTimeslots] = useState([]);
+  const [isLoadingTimeslots, setIsLoadingTimeslots] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  // ==========================================
+  // AUTOMATED CALCULATIONS
+  // ==========================================
+  const selectedService = servicesMenu.find(s => s.id === selectedServiceId);
+  const basePrice = selectedService ? selectedService.price : 0;
+  const gstAmount = basePrice * 0.05;
+  const finalTotal = basePrice + gstAmount;
+  const categories = [...new Set(servicesMenu.map(item => item.category))];
 
-  // Navigation Handlers
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
-  const updateForm = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+  const todayString = new Date().toISOString().split('T')[0];
 
-  const groupedServices = servicesMenu.reduce((acc, service) => {
-    if (!acc[service.category]) acc[service.category] = [];
-    acc[service.category].push(service);
-    return acc;
-  }, {});
-
-  // Live Availability Checker
+  // ==========================================
+  // EFFECTS & LOGIC
+  // ==========================================
+  
   useEffect(() => {
-    const fetchAvailability = async () => {
-      if (formData.stylist && formData.date) {
-        setIsFetchingSlots(true);
-        updateForm('timeSlot', ''); 
+    if (selectedServiceId && step === 1) {
+      setStep(2);
+    }
+  }, [selectedServiceId]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setAvailableTimeslots([]);
+      return;
+    }
+
+    const fetchTimeslots = async () => {
+      setIsLoadingTimeslots(true);
+      setSelectedTime(''); 
+
+      try {
+        await new Promise(resolve => setTimeout(resolve, 800)); 
         
-        try {
-          const response = await axios.get(`${API_BASE_URL}/api/appointments/booked-slots/${formData.stylist.id}/${formData.date}`);
+        const rawStartTimes = [
+          "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", 
+          "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", 
+          "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", 
+          "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", 
+          "06:00 PM", "06:30 PM", "07:00 PM"
+        ];
+        
+        const filterPastTimes = (slots) => {
+          const now = new Date();
+          const selected = new Date(selectedDate);
           
-          if (response.data.success) {
-            setBookedSlots(response.data.data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch availability:", error);
-          setBookedSlots([]); 
-        } finally {
-          setIsFetchingSlots(false);
-        }
+          const isToday = 
+            selected.getDate() === now.getDate() &&
+            selected.getMonth() === now.getMonth() &&
+            selected.getFullYear() === now.getFullYear();
+
+          if (!isToday) return slots; 
+
+          return slots.filter(slot => {
+            const [time, modifier] = slot.split(' ');
+            let [hours, minutes] = time.split(':');
+            hours = parseInt(hours, 10);
+            
+            if (modifier === 'PM' && hours < 12) hours += 12;
+            if (modifier === 'AM' && hours === 12) hours = 0;
+            
+            const slotTime = new Date();
+            slotTime.setHours(hours, parseInt(minutes, 10), 0, 0);
+            
+            return slotTime > now;
+          });
+        };
+
+        const generateTimeBlock = (startTime) => {
+          const durationMinutes = 60; 
+          const [time, modifier] = startTime.split(' ');
+          let [hours, minutes] = time.split(':');
+          hours = parseInt(hours, 10);
+          
+          if (modifier === 'PM' && hours !== 12) hours += 12;
+          if (modifier === 'AM' && hours === 12) hours = 0;
+          
+          const d = new Date();
+          d.setHours(hours, parseInt(minutes, 10) + durationMinutes, 0, 0);
+          
+          let endHours = d.getHours();
+          let endMins = d.getMinutes();
+          const endModifier = endHours >= 12 ? 'PM' : 'AM';
+          
+          if (endHours > 12) endHours -= 12;
+          if (endHours === 0) endHours = 12;
+          
+          const formattedEnd = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')} ${endModifier}`;
+          return `${startTime} - ${formattedEnd}`;
+        };
+
+        const validStartTimes = filterPastTimes(rawStartTimes);
+        const formattedTimeBlocks = validStartTimes.map(generateTimeBlock);
+
+        setAvailableTimeslots(formattedTimeBlocks);
+
+      } catch (error) {
+        console.error("Failed to fetch timeslots:", error);
+        setAvailableTimeslots([]);
+      } finally {
+        setIsLoadingTimeslots(false);
       }
     };
 
-    fetchAvailability();
-  }, [formData.date, formData.stylist]);
+    fetchTimeslots();
+  }, [selectedDate, selectedArtist]);
 
-  // API Integration Handler
-  const handleCheckout = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // ==========================================
+  // BACKEND INTEGRATION HANDLER
+  // ==========================================
+  const handleConfirmReservation = async () => {
+    // Basic validation
+    if (!customerName || !customerPhone) {
+      alert("Please enter both your name and phone number to complete the booking.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Prepare the payload matching what your Node backend expects
+    const bookingData = {
+      userId: customerPhone, 
+      clientName: customerName,
+      
+      // Backend checks if this is 'any', otherwise expects a valid ID
+      stylistId: selectedArtist === 'Any Available Artist' ? 'any' : selectedArtist, 
+      
+      date: selectedDate,
+      timeSlot: selectedTime,
+      
+      // Backend expects an array of objects for services so it can use .reduce()
+      services: [
+        {
+          serviceId: selectedService.id,
+          name: selectedService.name,
+          price: selectedService.price 
+        }
+      ],
+      
+      totalAmount: finalTotal
+    };
 
     try {
-      const payload = {
-        userId: formData.clientPhone, 
-        clientName: formData.clientName,
-        stylistId: formData.stylist.id,
-        services: [{
-          serviceId: formData.service.id,
-          name: formData.service.name,
-          price: formData.service.price
-        }],
-        date: formData.date,
-        timeSlot: formData.timeSlot
-      };
+      // NOTE: Make sure this URL matches your actual backend route (e.g., /api/bookings or /book)
+      const response = await fetch('http://localhost:5000/api/appointments/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
+      });
 
-      const response = await axios.post(`${API_BASE_URL}/api/appointments/book`, payload);
+      const data = await response.json();
 
-      if (response.data.success) {
-        setStep(5);
+      if (response.ok) {
+        // Success! Hide the form and show the success screen
+        setIsSuccess(true);
+      } else {
+        // Handle server errors (e.g., missing fields, database error)
+        alert(`Booking Failed: ${data.message || 'Please try again.'}`);
       }
     } catch (error) {
-      console.error("Booking failed:", error.response?.data?.message || error.message);
-      alert(error.response?.data?.message || "Something went wrong. Please check your backend connection.");
+      console.error("Error submitting booking:", error);
+      alert("Could not connect to the server. Please ensure the backend is running.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const slideVariants = {
-    hidden: { x: 50, opacity: 0 },
-    visible: { x: 0, opacity: 1, transition: { duration: 0.4 } },
-    exit: { x: -50, opacity: 0, transition: { duration: 0.3 } }
-  };
+  // ==========================================
+  // RENDER UI
+  // ==========================================
+
+  // If booking is successful, show this screen instead of the form
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] w-full flex items-center justify-center p-6 text-white font-sans">
+        <div className="bg-[#111] border border-[#D4AF37]/30 p-10 rounded-lg shadow-[0_0_50px_rgba(212,175,55,0.15)] text-center max-w-md w-full animate-in zoom-in duration-500">
+          <CheckCircle2 size={64} className="text-[#D4AF37] mx-auto mb-6" />
+          <h2 className="text-3xl font-serif text-[#D4AF37] mb-4">Booking Confirmed!</h2>
+          <p className="text-gray-400 text-sm leading-relaxed mb-8">
+            Thank you, {customerName}. Your appointment for {selectedService?.name} on {selectedDate} has been secured. You will receive a WhatsApp confirmation shortly.
+          </p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-white transition-all rounded-sm"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-brand-black w-full flex items-center justify-center py-20 px-4">
-      <div className="w-full max-w-3xl">
+    <div className="min-h-screen bg-[#0a0a0a] w-full pb-24 font-sans text-white pt-24 px-6">
+      <div className="max-w-3xl mx-auto">
         
-        {step < 5 && (
-          <div className="mb-12">
-            <h2 className="text-3xl font-serif text-brand-white text-center mb-6">
-              Reserve Your <span className="text-brand-gold italic">Chair</span>
-            </h2>
-            <div className="flex justify-between items-center max-w-sm mx-auto relative">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-brand-white/10 -z-10 transform -translate-y-1/2"></div>
-              {[1, 2, 3, 4].map((num) => (
-                <div 
-                  key={num} 
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
-                    step >= num ? 'bg-brand-gold text-brand-black' : 'bg-brand-black border border-brand-white/20 text-brand-white/50'
-                  }`}
-                >
-                  {num}
-                </div>
-              ))}
+        {/* HEADER */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-serif tracking-wide mb-3">
+            Reserve Your <span className="text-[#D4AF37] italic">Chair</span>
+          </h1>
+          <p className="text-gray-500 text-xs tracking-widest uppercase">Toni & Guy Patna</p>
+        </div>
+
+        {/* STEPPER INDICATOR */}
+        <div className="flex justify-center items-center gap-2 md:gap-4 mb-12">
+          {[1, 2, 3, 4].map((num) => (
+            <div key={num} className="flex items-center gap-2 md:gap-4">
+              <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-colors ${
+                step >= num ? 'bg-[#D4AF37] text-black' : 'bg-[#222] text-gray-500'
+              }`}>
+                {step > num ? <Check size={16} /> : num}
+              </div>
+              {num < 4 && <div className={`w-4 md:w-8 h-[2px] ${step > num ? 'bg-[#D4AF37]' : 'bg-[#222]'}`} />}
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
-        <div className="bg-brand-charcoal border border-brand-white/10 p-6 md:p-10 relative overflow-hidden min-h-[400px]">
-          <AnimatePresence mode="wait">
-            
-            {/* STEP 1: Select Service */}
-            {step === 1 && (
-              <motion.div key="step1" variants={slideVariants} initial="hidden" animate="visible" exit="exit" className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                <h3 className="text-xl font-serif text-brand-white mb-6">1. Choose a Service</h3>
-                <div className="space-y-8">
-                  {Object.entries(groupedServices).map(([category, services]) => (
-                    <div key={category} className="space-y-4">
-                      <h4 className="text-brand-gold font-sans text-sm uppercase tracking-widest border-b border-brand-white/10 pb-2">
-                        {category}
-                      </h4>
-                      {services.map((svc) => (
-                        <div 
-                          key={svc.id}
-                          onClick={() => updateForm('service', svc)}
-                          className={`p-4 border cursor-pointer transition-all duration-300 flex justify-between items-center ${
-                            formData.service?.id === svc.id ? 'border-brand-gold bg-brand-gold/5' : 'border-brand-white/10 hover:border-brand-white/30'
-                          }`}
-                        >
-                          <div>
-                            <h4 className="text-brand-white font-sans text-lg">{svc.name}</h4>
-                            <p className="text-brand-white/50 text-sm">{svc.duration} • {svc.description}</p>
-                          </div>
-                          <span className="text-brand-gold font-semibold whitespace-nowrap ml-4">₹{svc.price}</span>
-                        </div>
-                      ))}
+        {/* WIZARD CONTAINER */}
+        <div className="bg-[#111] border border-white/5 p-6 md:p-10 rounded-lg shadow-2xl relative min-h-[400px]">
+          
+          {step > 1 && (
+            <button 
+              onClick={() => setStep(step - 1)}
+              className="absolute top-6 left-6 text-gray-500 hover:text-[#D4AF37] flex items-center gap-2 text-[10px] uppercase tracking-widest transition-colors"
+            >
+              <ArrowLeft size={14} /> Back
+            </button>
+          )}
+
+          {/* ================= STEP 1: SELECT SERVICE ================= */}
+          {step === 1 && (
+            <div className="animate-in fade-in duration-500 mt-8 md:mt-0">
+              <h2 className="text-xl font-serif text-[#D4AF37] mb-6">1. Select a Service</h2>
+              
+              <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-2 border-b border-white/10">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 text-[10px] uppercase tracking-widest whitespace-nowrap transition-colors ${
+                      selectedCategory === cat ? 'text-[#D4AF37] border-b border-[#D4AF37]' : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                {servicesMenu.filter(s => s.category === selectedCategory).map(service => (
+                  <button
+                    key={service.id}
+                    onClick={() => {
+                      setSelectedServiceId(service.id);
+                      setStep(2);
+                    }}
+                    className="w-full text-left p-4 border border-white/5 hover:border-[#D4AF37]/50 bg-black/40 hover:bg-black transition-all flex justify-between items-center group rounded-sm"
+                  >
+                    <div>
+                      <h3 className="text-white font-serif text-lg group-hover:text-[#D4AF37] transition-colors">{service.name}</h3>
+                      <p className="text-gray-500 text-xs mt-1 font-sans">{service.duration} • ₹{service.price} Base</p>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+                    <ChevronRight className="text-gray-600 group-hover:text-[#D4AF37] transition-colors" size={18} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-            {/* STEP 2: Select Stylist */}
-            {step === 2 && (
-              <motion.div key="step2" variants={slideVariants} initial="hidden" animate="visible" exit="exit">
-                <h3 className="text-xl font-serif text-brand-white mb-6 text-center">2. Select Your Artist</h3>
-                <div className="max-w-md mx-auto">
-                  {stylists.map((st) => (
-                    <div 
-                      key={st.id}
-                      onClick={() => updateForm('stylist', st)}
-                      className={`p-6 border text-center cursor-pointer transition-all duration-300 ${
-                        formData.stylist?.id === st.id ? 'border-brand-gold bg-brand-gold/5' : 'border-brand-white/10 hover:border-brand-white/30'
-                      }`}
-                    >
-                      <h4 className="text-brand-white font-sans text-lg mb-1">{st.name}</h4>
-                      <p className="text-brand-gold text-xs uppercase tracking-widest">{st.role}</p>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+          {/* ================= STEP 2: SELECT ARTIST ================= */}
+          {step === 2 && (
+            <div className="animate-in slide-in-from-right-4 duration-500 mt-8 md:mt-0">
+              <h2 className="text-xl font-serif text-[#D4AF37] mb-6">2. Select Your Artist</h2>
+              <div className="space-y-3">
+                {['Any Available Artist', 'Creative Director (+₹500)', 'Senior Stylist (+₹200)'].map(artist => (
+                  <button
+                    key={artist}
+                    onClick={() => {
+                      setSelectedArtist(artist);
+                      setStep(3);
+                    }}
+                    className={`w-full text-left p-5 border transition-all rounded-sm ${
+                      selectedArtist === artist 
+                        ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' 
+                        : 'border-white/5 bg-black/40 text-white hover:border-gray-500'
+                    }`}
+                  >
+                    <span className="font-serif tracking-wide">{artist}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-            {/* STEP 3: Date & Time */}
-            {step === 3 && (
-              <motion.div key="step3" variants={slideVariants} initial="hidden" animate="visible" exit="exit">
-                <h3 className="text-xl font-serif text-brand-white mb-6">3. Date & Time</h3>
-                
-                <div className="mb-6">
-                  <label className="flex items-center gap-2 text-brand-white/70 text-sm uppercase tracking-widest mb-3">
-                    <Calendar size={16} /> Select Date
-                  </label>
+          {/* ================= STEP 3: DATE & TIME ================= */}
+          {step === 3 && (
+            <div className="animate-in slide-in-from-right-4 duration-500 mt-8 md:mt-0">
+              <h2 className="text-xl font-serif text-[#D4AF37] mb-6">3. Select Schedule</h2>
+              
+              <div className="mb-8 space-y-6">
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">Select Date</label>
                   <input 
                     type="date" 
-                    value={formData.date}
-                    min={new Date().toISOString().split('T')[0]} 
-                    onChange={(e) => updateForm('date', e.target.value)}
-                    onKeyDown={(e) => e.preventDefault()} 
-                    onClick={(e) => e.target.showPicker && e.target.showPicker()} 
-                    className="w-full bg-brand-black border border-brand-white/20 text-brand-white p-3 outline-none focus:border-brand-gold transition-colors color-scheme-dark cursor-pointer"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    min={todayString} 
+                    className="w-full bg-black border border-white/10 p-4 text-white focus:border-[#D4AF37] outline-none transition-colors [color-scheme:dark] rounded-sm"
                   />
                 </div>
 
-                {formData.date && (
-                  <div>
-                    <label className="flex items-center gap-2 text-brand-white/70 text-sm uppercase tracking-widest mb-3">
-                      <Clock size={16} /> Available Slots
-                    </label>
-                    
-                    {isFetchingSlots ? (
-                      <div className="flex items-center gap-2 text-brand-gold/70 text-sm font-sans mt-4">
-                        <Loader2 size={16} className="animate-spin" /> Checking live availability...
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-3 mt-2">
-                        {timeSlots.map((time) => {
-                          // --- NEW LOGIC INTEGRATION ---
-                          const isBookedInDB = bookedSlots.includes(time);
-                          const isPastTime = isSlotInPast(formData.date, time);
-                          const isDisabled = isBookedInDB || isPastTime;
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-3">Available Timeslots</label>
+                  
+                  {!selectedDate ? (
+                    <div className="p-6 bg-black/40 border border-white/5 rounded-sm text-center">
+                      <p className="text-gray-500 text-xs tracking-wider">Please select a date to view available times.</p>
+                    </div>
+                  ) : isLoadingTimeslots ? (
+                    <div className="p-8 bg-black/40 border border-white/5 rounded-sm flex flex-col items-center justify-center gap-3">
+                      <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-[#D4AF37] text-[10px] tracking-widest uppercase">Checking availability...</p>
+                    </div>
+                  ) : availableTimeslots.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 animate-in fade-in duration-300">
+                      {availableTimeslots.map((timeBlock) => (
+                        <button
+                          key={timeBlock}
+                          onClick={() => setSelectedTime(timeBlock)}
+                          className={`py-3 px-2 text-[11px] uppercase tracking-widest transition-all rounded-sm border ${
+                            selectedTime === timeBlock
+                              ? 'bg-[#D4AF37] text-black border-[#D4AF37] font-bold shadow-[0_0_15px_rgba(212,175,55,0.3)]'
+                              : 'bg-black/40 text-gray-400 border-white/10 hover:border-[#D4AF37]/50 hover:text-white'
+                          }`}
+                        >
+                          {timeBlock}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-red-950/20 border border-red-900/30 rounded-sm text-center">
+                      <p className="text-red-400/80 text-xs tracking-wider">
+                        No timeslots left for this date. Please select another day.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                          return (
-                            <button
-                              key={time}
-                              disabled={isDisabled}
-                              onClick={() => updateForm('timeSlot', time)}
-                              className={`px-5 py-3 border text-sm font-sans transition-all duration-300 ${
-                                isDisabled 
-                                  ? 'border-brand-white/10 text-brand-white/20 cursor-not-allowed bg-brand-black line-through'
-                                  : formData.timeSlot === time 
-                                    ? 'border-brand-gold bg-brand-gold text-brand-black font-bold' 
-                                    : 'border-brand-white/20 text-brand-white hover:border-brand-gold'
-                              }`}
-                            >
-                              {time}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            )}
+              <button 
+                disabled={!selectedDate || !selectedTime}
+                onClick={() => setStep(4)}
+                className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-sm"
+              >
+                Continue to Details
+              </button>
+            </div>
+          )}
 
-            {/* STEP 4: Client Details & Confirm */}
-            {step === 4 && (
-              <motion.div key="step4" variants={slideVariants} initial="hidden" animate="visible" exit="exit">
-                <h3 className="text-xl font-serif text-brand-white mb-6">4. Final Details</h3>
-                
-                <div className="bg-brand-black border border-brand-gold/30 p-5 mb-8 flex flex-col gap-2">
-                  <p className="text-brand-white text-sm"><span className="text-brand-white/50">Service:</span> {formData.service?.name}</p>
-                  <p className="text-brand-white text-sm"><span className="text-brand-white/50">Artist:</span> {formData.stylist?.name}</p>
-                  <p className="text-brand-white text-sm"><span className="text-brand-white/50">Time:</span> {formData.date} at {formData.timeSlot}</p>
-                  <p className="text-brand-gold font-bold mt-2 pt-2 border-t border-brand-white/10">Total: ₹{formData.service?.price}</p>
+          {/* ================= STEP 4: FINAL DETAILS & MATH ================= */}
+          {step === 4 && selectedService && (
+            <div className="animate-in slide-in-from-right-4 duration-500 mt-8 md:mt-0">
+              <h2 className="text-xl font-serif text-[#D4AF37] mb-6">4. Final Details</h2>
+              
+              <div className="border border-white/10 bg-black/40 p-6 rounded-sm mb-8">
+                <div className="space-y-2 mb-6 pb-6 border-b border-white/10">
+                  <p className="text-white text-sm flex justify-between font-sans">
+                    <span className="text-gray-500">Service:</span> {selectedService.name}
+                  </p>
+                  <p className="text-white text-sm flex justify-between font-sans">
+                    <span className="text-gray-500">Artist:</span> {selectedArtist}
+                  </p>
+                  <p className="text-white text-sm flex justify-between font-sans">
+                    <span className="text-gray-500">Time:</span> {selectedDate} • {selectedTime}
+                  </p>
                 </div>
 
-                <form onSubmit={handleCheckout} className="space-y-5">
-                  <div>
-                    <input 
-                      type="text" 
-                      placeholder="Full Name"
-                      required
-                      value={formData.clientName}
-                      onChange={(e) => updateForm('clientName', e.target.value)}
-                      className="w-full bg-brand-black border border-brand-white/20 text-brand-white p-4 outline-none focus:border-brand-gold transition-colors"
-                    />
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm text-gray-400 font-sans">
+                    <span>Base Price</span>
+                    <span>₹{basePrice.toFixed(2)}</span>
                   </div>
-                  <div>
-                    <input 
-                      type="tel" 
-                      placeholder="Phone Number"
-                      required
-                      value={formData.clientPhone}
-                      onChange={(e) => updateForm('clientPhone', e.target.value)}
-                      className="w-full bg-brand-black border border-brand-white/20 text-brand-white p-4 outline-none focus:border-brand-gold transition-colors"
-                    />
+                  <div className="flex justify-between text-sm text-gray-400 font-sans">
+                    <span>Taxes (5% GST)</span>
+                    <span>+ ₹{gstAmount.toFixed(2)}</span>
                   </div>
-                  <button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 py-4 bg-brand-gold text-brand-black font-sans uppercase tracking-widest font-bold hover:bg-brand-white transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 size={20} className="animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Confirm Reservation"
-                    )}
-                  </button>
-                </form>
-              </motion.div>
-            )}
+                  
+                  <div className="pt-4 border-t border-white/10 mt-2">
+                    <div className="flex justify-between items-center text-lg text-[#D4AF37] font-bold font-sans">
+                      <span>Total Amount</span>
+                      <span>₹{finalTotal.toFixed(2)}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 text-right mt-1 font-mono tracking-widest uppercase">
+                      (₹{basePrice} + 5% GST = ₹{finalTotal.toFixed(0)})
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {/* STEP 5: SUCCESS SCREEN */}
-            {step === 5 && (
-              <motion.div key="step5" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-10">
-                <CheckCircle size={64} className="text-brand-gold mx-auto mb-6" strokeWidth={1} />
-                <h3 className="text-3xl font-serif text-brand-white mb-4">You're Booked.</h3>
-                <p className="text-brand-white/70 font-sans font-light">
-                  Your appointment with {formData.stylist?.name} on {formData.date} at {formData.timeSlot} is confirmed. We will send a WhatsApp reminder shortly.
-                </p>
-              </motion.div>
-            )}
+              {/* INPUTS BOUND TO STATE */}
+              <div className="space-y-4 mb-8">
+                <input 
+                  type="text" 
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Full Name" 
+                  className="w-full bg-black border border-white/10 p-4 text-white focus:border-[#D4AF37] outline-none text-sm placeholder:text-gray-600 rounded-sm" 
+                />
+                <input 
+                  type="tel" 
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Phone Number (Include Country Code e.g. 91...)" 
+                  className="w-full bg-black border border-white/10 p-4 text-white focus:border-[#D4AF37] outline-none text-sm placeholder:text-gray-600 rounded-sm" 
+                />
+              </div>
 
-          </AnimatePresence>
+              {/* LIVE BACKEND BUTTON */}
+              <button 
+                onClick={handleConfirmReservation}
+                disabled={isSubmitting}
+                className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-white transition-all shadow-[0_0_20px_rgba(212,175,55,0.2)] rounded-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Processing Booking...' : 'Confirm Reservation'}
+              </button>
+            </div>
+          )}
+
         </div>
-
-        {/* Wizard Navigation Controls */}
-        {step < 4 && step > 0 && (
-          <div className="flex justify-between mt-8">
-            <button 
-              onClick={prevStep} 
-              disabled={step === 1}
-              className={`flex items-center gap-2 text-sm uppercase tracking-widest font-sans transition-colors ${step === 1 ? 'text-transparent' : 'text-brand-white hover:text-brand-gold'}`}
-            >
-              <ChevronLeft size={16} /> Back
-            </button>
-
-            <button 
-              onClick={nextStep} 
-              disabled={
-                (step === 1 && !formData.service) || 
-                (step === 2 && !formData.stylist) || 
-                (step === 3 && (!formData.date || !formData.timeSlot))
-              }
-              className={`flex items-center gap-2 text-sm uppercase tracking-widest font-sans transition-colors ${
-                (step === 1 && !formData.service) || (step === 2 && !formData.stylist) || (step === 3 && (!formData.date || !formData.timeSlot)) 
-                ? 'text-brand-white/20 cursor-not-allowed' 
-                : 'text-brand-gold hover:text-brand-white'
-              }`}
-            >
-              Next <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
-};
-
-export default Booking;
+}
