@@ -42,7 +42,6 @@ export default function Booking() {
   // ==========================================
   // EFFECTS & LOGIC
   // ==========================================
-  
   useEffect(() => {
     if (selectedServiceId && step === 1) {
       setStep(2);
@@ -139,7 +138,6 @@ export default function Booking() {
   // BACKEND INTEGRATION HANDLER
   // ==========================================
   const handleConfirmReservation = async () => {
-    // Basic validation
     if (!customerName || !customerPhone) {
       alert("Please enter both your name and phone number to complete the booking.");
       return;
@@ -147,18 +145,12 @@ export default function Booking() {
 
     setIsSubmitting(true);
 
-    // Prepare the payload matching what your Node backend expects
     const bookingData = {
       userId: customerPhone, 
       clientName: customerName,
-      
-      // Backend checks if this is 'any', otherwise expects a valid ID
       stylistId: selectedArtist === 'Any Available Artist' ? 'any' : selectedArtist, 
-      
       date: selectedDate,
       timeSlot: selectedTime,
-      
-      // Backend expects an array of objects for services so it can use .reduce()
       services: [
         {
           serviceId: selectedService.id,
@@ -166,13 +158,16 @@ export default function Booking() {
           price: selectedService.price 
         }
       ],
-      
       totalAmount: finalTotal
     };
 
     try {
-      // NOTE: Make sure this URL matches your actual backend route (e.g., /api/bookings or /book)
-      const response = await fetch('http://localhost:5000/api/appointments/book', {
+      // Dynamic API URL for both local testing and production deployments
+      const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 
+                      process.env.REACT_APP_API_URL || 
+                      'http://localhost:5000';
+
+      const response = await fetch(`${API_URL}/api/appointments/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,10 +178,8 @@ export default function Booking() {
       const data = await response.json();
 
       if (response.ok) {
-        // Success! Hide the form and show the success screen
         setIsSuccess(true);
       } else {
-        // Handle server errors (e.g., missing fields, database error)
         alert(`Booking Failed: ${data.message || 'Please try again.'}`);
       }
     } catch (error) {
@@ -200,12 +193,10 @@ export default function Booking() {
   // ==========================================
   // RENDER UI
   // ==========================================
-
-  // If booking is successful, show this screen instead of the form
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] w-full flex items-center justify-center p-6 text-white font-sans">
-        <div className="bg-[#111] border border-[#D4AF37]/30 p-10 rounded-lg shadow-[0_0_50px_rgba(212,175,55,0.15)] text-center max-w-md w-full animate-in zoom-in duration-500">
+        <div className="bg-[#111] border border-[#D4AF37]/30 p-10 rounded-lg shadow-[0_0_50px_rgba(212,175,55,0.15)] text-center max-w-md w-full">
           <CheckCircle2 size={64} className="text-[#D4AF37] mx-auto mb-6" />
           <h2 className="text-3xl font-serif text-[#D4AF37] mb-4">Booking Confirmed!</h2>
           <p className="text-gray-400 text-sm leading-relaxed mb-8">
@@ -262,7 +253,7 @@ export default function Booking() {
 
           {/* ================= STEP 1: SELECT SERVICE ================= */}
           {step === 1 && (
-            <div className="animate-in fade-in duration-500 mt-8 md:mt-0">
+            <div>
               <h2 className="text-xl font-serif text-[#D4AF37] mb-6">1. Select a Service</h2>
               
               <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-2 border-b border-white/10">
@@ -302,7 +293,7 @@ export default function Booking() {
 
           {/* ================= STEP 2: SELECT ARTIST ================= */}
           {step === 2 && (
-            <div className="animate-in slide-in-from-right-4 duration-500 mt-8 md:mt-0">
+            <div>
               <h2 className="text-xl font-serif text-[#D4AF37] mb-6">2. Select Your Artist</h2>
               <div className="space-y-3">
                 {['Any Available Artist', 'Creative Director (+₹500)', 'Senior Stylist (+₹200)'].map(artist => (
@@ -327,7 +318,7 @@ export default function Booking() {
 
           {/* ================= STEP 3: DATE & TIME ================= */}
           {step === 3 && (
-            <div className="animate-in slide-in-from-right-4 duration-500 mt-8 md:mt-0">
+            <div>
               <h2 className="text-xl font-serif text-[#D4AF37] mb-6">3. Select Schedule</h2>
               
               <div className="mb-8 space-y-6">
@@ -355,7 +346,7 @@ export default function Booking() {
                       <p className="text-[#D4AF37] text-[10px] tracking-widest uppercase">Checking availability...</p>
                     </div>
                   ) : availableTimeslots.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {availableTimeslots.map((timeBlock) => (
                         <button
                           key={timeBlock}
@@ -392,7 +383,7 @@ export default function Booking() {
 
           {/* ================= STEP 4: FINAL DETAILS & MATH ================= */}
           {step === 4 && selectedService && (
-            <div className="animate-in slide-in-from-right-4 duration-500 mt-8 md:mt-0">
+            <div>
               <h2 className="text-xl font-serif text-[#D4AF37] mb-6">4. Final Details</h2>
               
               <div className="border border-white/10 bg-black/40 p-6 rounded-sm mb-8">
@@ -423,14 +414,10 @@ export default function Booking() {
                       <span>Total Amount</span>
                       <span>₹{finalTotal.toFixed(2)}</span>
                     </div>
-                    <p className="text-[10px] text-gray-500 text-right mt-1 font-mono tracking-widest uppercase">
-                      (₹{basePrice} + 5% GST = ₹{finalTotal.toFixed(0)})
-                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* INPUTS BOUND TO STATE */}
               <div className="space-y-4 mb-8">
                 <input 
                   type="text" 
@@ -443,12 +430,11 @@ export default function Booking() {
                   type="tel" 
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="Phone Number (Include Country Code e.g. 91...)" 
+                  placeholder="Phone Number (e.g. 91xxxxxxxxxx)" 
                   className="w-full bg-black border border-white/10 p-4 text-white focus:border-[#D4AF37] outline-none text-sm placeholder:text-gray-600 rounded-sm" 
                 />
               </div>
 
-              {/* LIVE BACKEND BUTTON */}
               <button 
                 onClick={handleConfirmReservation}
                 disabled={isSubmitting}
