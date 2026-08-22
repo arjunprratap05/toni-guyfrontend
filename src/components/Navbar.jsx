@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X, Phone, Star } from 'lucide-react';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,6 +49,17 @@ const Navbar = () => {
                 About
               </Link>
               
+              {/* Direct Link to your exact Google Maps Review Listing */}
+              <a 
+                href="https://www.google.com/maps/place/Toni%26Guy/@25.6124381,85.1364319,17z/data=!3m1!5s0x39ed5840ffbb2b59:0x2ef74a4a40d2fe!4m8!3m7!1s0x39ed585b44adc7d7:0xe22eb7ccf35e0340!8m2!3d25.6124381!4d85.1390068!9m1!1b1!16s%2Fg%2F11b7k0v2dz?entry=ttu&g_ep=EgoyMDI2MDgxOS4wIKXMDSoASAFQAw%3D%3D" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm font-sans uppercase tracking-widest text-brand-gold hover:text-brand-white transition-colors duration-300"
+              >
+                <Star size={14} fill="currentColor" />
+                Rate Us
+              </a>
+
               <Link 
                 to="/booking" 
                 className="px-6 py-3 bg-brand-gold text-brand-black font-sans text-sm uppercase tracking-widest font-semibold hover:bg-brand-white transition-all duration-300 shadow-lg shadow-brand-gold/10"
@@ -95,6 +106,16 @@ const Navbar = () => {
               >
                 About
               </Link>
+              <a 
+                href="https://www.google.com/maps/place/Toni%26Guy/@25.6124381,85.1364319,17z/data=!3m1!5s0x39ed5840ffbb2b59:0x2ef74a4a40d2felm4!1s0x39ed58544adc7d7:0x1b0x39ed58544adc7d7" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={closeMobileMenu} 
+                className="flex items-center justify-center gap-2 px-3 py-3 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 text-brand-gold hover:text-brand-white transition-colors"
+              >
+                <Star size={14} fill="currentColor" />
+                Rate Us on Google
+              </a>
               
               <div className="pt-4">
                 <Link 
