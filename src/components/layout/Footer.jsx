@@ -53,7 +53,7 @@ const Footer = () => {
               <MapPin size={20} className="text-brand-gold shrink-0 mt-0.5" />
               <p className="font-sans text-sm font-light leading-relaxed">
                 2nd floor, Faizal Imam Complex,<br />
-                Fraser Rd, beside Central Mall,<br />
+                Fraser Rd, beside Centro Mall,<br />
                 Old Jakkanpur, Lodipur,<br />
                 Patna, Bihar 800001
               </p>
