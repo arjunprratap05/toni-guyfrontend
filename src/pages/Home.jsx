@@ -346,7 +346,7 @@ export default function HomeFabulous() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a 
-              href="https://www.google.com/search?q=toni+%26+guy+patna#lrd=..." 
+              href="https://www.google.com/maps/place/Toni%26Guy/@25.6124381,85.1364319,17z/data=!3m1!5s0x39ed5840ffbb2b59:0x2ef74a4a40d2fe!4m8!3m7!1s0x39ed585b44adc7d7:0xe22eb7ccf35e0340!8m2!3d25.6124381!4d85.1390068!9m1!1b1!16s%2Fg%2F11b7k0v2dz?entry=ttu&g_ep=EgoyMDI2MDgxOS4wIKXMDSoASAFQAw%3D%3D" 
               target="_blank" 
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-indigo-950 text-[12px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-pink-500 hover:text-white transition-all duration-300 shadow-lg"
