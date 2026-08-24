@@ -162,10 +162,8 @@ export default function Booking() {
     };
 
     try {
-      // Dynamic API URL for both local testing and production deployments
-      const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 
-                      process.env.REACT_APP_API_URL || 
-                      'http://localhost:5000';
+      // Safe Vite environment variable check
+      const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:5000';
 
       const response = await fetch(`${API_URL}/api/appointments/book`, {
         method: 'POST',

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scissors, Sparkles, Droplets, Flower2, Smile, Star, X, Play, ArrowRight, ShieldCheck, Clock, Award, ChevronLeft, ChevronRight, MessageSquareHeart } from 'lucide-react';
+import { Scissors, Sparkles, Droplets, Flower2, Smile, Star, X, Play, ArrowRight, ShieldCheck, Clock, Award, ChevronLeft, ChevronRight, MessageSquareHeart, CheckCircle2 } from 'lucide-react';
 
 const fallbackServices = [
   { id: 1, category: 'Hair Cut & Styling', name: 'Artistic Haircut', price: '1,800', description: 'Bespoke structural precision tailored to your bone structure.', tag: 'Signature' },
@@ -9,11 +9,22 @@ const fallbackServices = [
   { id: 'h6', category: 'Hair Treatment', name: 'Keratin Infusion', price: '6,500', description: 'Deep structural alignment to eliminate frizz.', tag: 'Luxury Care' },
 ];
 
+// Completely upgraded 9-grid immersive layout featuring all your real salon media!
 const salonGallery = [
+  // Row 1 & 2 Layout (Main Video + Reception + VIP Skin Suite)
   { id: 1, url: "/video-1.mp4", type: "video", title: "Global Hair Styling Suite", category: "Styling", span: "col-span-12 lg:col-span-8 row-span-2" },
-  { id: 4, url: "/video-5.mp4", type: "video", title: "Precision Colour Bar", category: "Color", span: "col-span-12 lg:col-span-6 row-span-1" },
-  { id: 5, url: "/video-6.mp4", type: "video", title: "VIP Private Lounge", category: "Exclusivity", span: "col-span-12 lg:col-span-6 row-span-1" },
-  { id: 6, url: "/video-7.mp4", type: "video", title: "Advanced Hair Treatments", category: "Treatment", span: "col-span-12 lg:col-span-12 row-span-2" }
+  { id: 2, url: "/reception.jpeg", type: "image", title: "Luxury Waiting Lounge", category: "Ambiance", span: "col-span-12 lg:col-span-4 row-span-1" },
+  { id: 3, url: "/viproomskin.jpeg", type: "image", title: "VIP Skin Suite", category: "Wellness", span: "col-span-12 lg:col-span-4 row-span-1" },
+  
+  // Row 3 Layout (Retail Display Zone)
+  { id: 4, url: "/colorjone.jpeg", type: "image", title: "L'Oréal Color Zone", category: "Color Bar", span: "col-span-12 md:col-span-4 row-span-1" },
+  { id: 5, url: "/labelm.jpeg", type: "image", title: "Premium Retail Collection", category: "Skincare", span: "col-span-12 md:col-span-4 row-span-1" },
+  { id: 6, url: "/zone.jpeg", type: "image", title: "Authentic Haircare", category: "Retail", span: "col-span-12 md:col-span-4 row-span-1" },
+  
+  // Row 4 Layout (Private VIP & Spa Treatments)
+  { id: 7, url: "/VIPRoomweightloss.jpeg", type: "image", title: "Private Treatment Room", category: "Exclusivity", span: "col-span-12 md:col-span-4 row-span-1" },
+  { id: 8, url: "/Viproomhair.mp4", type: "video", title: "VIP Hair Wash Station", category: "Comfort", span: "col-span-12 md:col-span-4 row-span-1" },
+  { id: 9, url: "/vip.mp4", type: "video", title: "Zen Ambiance", category: "Relaxation", span: "col-span-12 md:col-span-4 row-span-1" }
 ];
 
 const clientReviews = [
@@ -44,14 +55,22 @@ const staggerContainer = {
   visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
 };
 
+const partnerImages = [
+  "/colorjone.jpeg",
+  "/labelm.jpeg",
+  "/zone.jpeg"
+];
+
 export default function HomeFabulous() {
   const [activeMedia, setActiveMedia] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isOpenNow, setIsOpenNow] = useState(false);
+  const [currentPartnerImg, setCurrentPartnerImg] = useState(0);
   const dailySignatureServices = useMemo(() => fallbackServices, []);
   
   const heroVideoRef = useRef(null);
 
+  // Auto-play Background Video safely
   useEffect(() => {
     if (heroVideoRef.current) {
       heroVideoRef.current.play().catch(error => {
@@ -60,6 +79,15 @@ export default function HomeFabulous() {
     }
   }, []);
 
+  // Retail Carousel Auto-Fader
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentPartnerImg((prev) => (prev + 1) % partnerImages.length);
+    }, 4000); 
+    return () => clearInterval(interval);
+  }, []);
+
+  // Live Salon Status Checker
   useEffect(() => {
     const checkSalonStatus = () => {
       const now = new Date();
@@ -187,15 +215,15 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 4. ETHOS STATEMENT */}
+      {/* 4. ETHOS STATEMENT (Updated with your Reception Mural) */}
       <section className="py-28 md:py-40 px-6 bg-indigo-950 text-center flex flex-col items-center text-white">
         <motion.div 
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}
           className="max-w-4xl"
         >
           <span className="text-pink-400 text-[10px] tracking-[0.4em] uppercase font-bold block mb-6">Our Philosophy</span>
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif leading-tight">
-            "Beauty is not a metric. It is a <span className="italic text-pink-300">feeling of absolute confidence</span> cultivated through expert craftsmanship."
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-serif leading-tight uppercase tracking-wider">
+            "The Ultimate <span className="italic text-pink-300">Fashion Accessory:</span> <br/> Your Hair."
           </h2>
           <div className="w-24 h-[2px] bg-gradient-to-r from-pink-500 to-amber-300 mx-auto mt-12 rounded-full"></div>
         </motion.div>
@@ -249,7 +277,84 @@ export default function HomeFabulous() {
         </motion.div>
       </section>
 
-      {/* 6. MULTI-VIDEO & PHOTO IMMERSIVE GALLERY */}
+      {/* 6. PREMIUM PARTNERS / RETAIL SHOWCASE WITH SLIDER */}
+      <section className="py-24 px-6 lg:px-20 bg-indigo-950 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+          
+          <motion.div 
+            initial={{ opacity: 0, x: -40 }} 
+            whileInView={{ opacity: 1, x: 0 }} 
+            viewport={{ once: true }} 
+            transition={{ duration: 0.8 }}
+            className="lg:w-1/2"
+          >
+            <span className="text-pink-400 text-[11px] tracking-[0.3em] uppercase font-bold block mb-4">Official Partner</span>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-white leading-tight mb-6">
+              World-Class Brands. <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200 italic">Uncompromising Quality.</span>
+            </h2>
+            <p className="text-gray-300 font-light text-sm md:text-base leading-relaxed mb-8 max-w-lg">
+              As an authorized TONI&GUY flagship, we exclusively formulate and retail with the absolute best in global beauty science. Experience vibrant, lasting transformations powered by international luxury lines.
+            </p>
+            
+            <ul className="space-y-4 mb-10">
+              <li className="flex items-center gap-3 text-white font-sans text-sm tracking-wide">
+                <CheckCircle2 className="text-pink-500 shrink-0" size={20} /> L'Oréal Professionnel, INOA & XTENSO
+              </li>
+              <li className="flex items-center gap-3 text-white font-sans text-sm tracking-wide">
+                <CheckCircle2 className="text-pink-500 shrink-0" size={20} /> Dermalogica, Lotus & Thalgo Skincare
+              </li>
+              <li className="flex items-center gap-3 text-white font-sans text-sm tracking-wide">
+                <CheckCircle2 className="text-pink-500 shrink-0" size={20} /> label.m, GK Hair & MoroccanOil
+              </li>
+            </ul>
+
+            <Link to="/services" className="inline-flex items-center gap-3 px-8 py-4 bg-white/10 text-white border border-white/20 text-[12px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-white hover:text-indigo-950 transition-all duration-500">
+              Discover Products
+            </Link>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, x: 40 }} 
+            whileInView={{ opacity: 1, x: 0 }} 
+            viewport={{ once: true }} 
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="lg:w-1/2 w-full relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-amber-500/20 blur-3xl transform scale-110"></div>
+            
+            <div className="relative rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 aspect-[4/3] md:aspect-[4/3] lg:aspect-[4/5] bg-black">
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={currentPartnerImg}
+                  src={partnerImages[currentPartnerImg]}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1, ease: "easeInOut" }}
+                  alt="Premium Retail Display at TONI&GUY Patna" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </AnimatePresence>
+
+              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 z-10">
+                <p className="text-white text-xs md:text-sm font-light tracking-wide mb-4">
+                  Take the luxury salon experience home with our bespoke retail collection.
+                </p>
+                <div className="flex gap-2">
+                  {partnerImages.map((_, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentPartnerImg ? 'w-8 bg-pink-500' : 'w-2 bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 7. MASSIVE MULTI-MEDIA VISUAL JOURNAL (Contains 9 layout grid) */}
       <section className="py-28 px-6 lg:px-20 bg-white">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-16 text-center">
           <span className="text-pink-500 text-[11px] tracking-[0.3em] uppercase font-bold block mb-3">Visual Journal</span>
@@ -257,7 +362,7 @@ export default function HomeFabulous() {
           <p className="text-slate-500 text-sm font-light mt-4">Click any frame to view our interactive high-definition media showcase.</p>
         </motion.div>
         
-        <div className="grid grid-cols-12 gap-6 auto-rows-[320px] md:auto-rows-[380px]">
+        <div className="grid grid-cols-12 gap-4 md:gap-6 auto-rows-[220px] md:auto-rows-[340px]">
           {salonGallery.map((media) => (
             <motion.div 
               key={media.id}
@@ -283,20 +388,20 @@ export default function HomeFabulous() {
               
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                 <div className="w-16 h-16 rounded-full bg-pink-500 text-white flex items-center justify-center transform scale-90 group-hover:scale-100 transition-transform duration-500 shadow-xl">
-                  <Play fill="currentColor" size={20} className="ml-0.5 text-white" />
+                  {media.type === 'video' ? <Play fill="currentColor" size={20} className="ml-0.5 text-white" /> : <Flower2 size={24} className="text-white" />}
                 </div>
               </div>
 
-              <div className="absolute bottom-8 left-8 right-8 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+              <div className="absolute bottom-6 left-6 right-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                 <span className="text-pink-300 text-[10px] uppercase tracking-widest font-semibold block mb-1">{media.category}</span>
-                <h3 className="text-white font-serif text-2xl drop-shadow-md">{media.title}</h3>
+                <h3 className="text-white font-serif text-xl md:text-2xl drop-shadow-md leading-tight">{media.title}</h3>
               </div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* 7. CLIENT TESTIMONIALS CAROUSEL */}
+      {/* 8. CLIENT TESTIMONIALS CAROUSEL */}
       <section className="py-28 px-6 bg-rose-100/50 border-t border-rose-200 text-center">
         <div className="max-w-3xl mx-auto">
           <span className="text-pink-600 text-[11px] tracking-[0.3em] uppercase font-bold block mb-3">Client Experiences</span>
@@ -332,7 +437,7 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 8. GOOGLE REVIEWS & DIRECT FEEDBACK SECTION */}
+      {/* 9. GOOGLE REVIEWS & DIRECT FEEDBACK SECTION */}
       <section className="py-24 px-6 bg-white text-center border-t border-rose-100">
         <div className="max-w-4xl mx-auto bg-gradient-to-br from-indigo-950 to-rose-950 p-10 md:p-16 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
           
@@ -366,7 +471,7 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 9. LIGHTBOX MODAL */}
+      {/* 10. LIGHTBOX MODAL FOR VIDEOS & IMAGES */}
       <AnimatePresence>
         {activeMedia && (
           <motion.div 
