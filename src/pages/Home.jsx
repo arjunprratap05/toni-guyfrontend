@@ -9,19 +9,15 @@ const fallbackServices = [
   { id: 'h6', category: 'Hair Treatment', name: 'Keratin Infusion', price: '6,500', description: 'Deep structural alignment to eliminate frizz.', tag: 'Luxury Care' },
 ];
 
-// Completely upgraded 9-grid immersive layout featuring all your real salon media!
 const salonGallery = [
-  // Row 1 & 2 Layout (Main Video + Reception + VIP Skin Suite)
   { id: 1, url: "/video-1.mp4", type: "video", title: "Global Hair Styling Suite", category: "Styling", span: "col-span-12 lg:col-span-8 row-span-2" },
   { id: 2, url: "/reception.jpeg", type: "image", title: "Luxury Waiting Lounge", category: "Ambiance", span: "col-span-12 lg:col-span-4 row-span-1" },
   { id: 3, url: "/viproomskin.jpeg", type: "image", title: "VIP Skin Suite", category: "Wellness", span: "col-span-12 lg:col-span-4 row-span-1" },
   
-  // Row 3 Layout (Retail Display Zone)
   { id: 4, url: "/colorjone.jpeg", type: "image", title: "L'Oréal Color Zone", category: "Color Bar", span: "col-span-12 md:col-span-4 row-span-1" },
   { id: 5, url: "/labelm.jpeg", type: "image", title: "Premium Retail Collection", category: "Skincare", span: "col-span-12 md:col-span-4 row-span-1" },
   { id: 6, url: "/zone.jpeg", type: "image", title: "Authentic Haircare", category: "Retail", span: "col-span-12 md:col-span-4 row-span-1" },
   
-  // Row 4 Layout (Private VIP & Spa Treatments)
   { id: 7, url: "/VIPRoomweightloss.jpeg", type: "image", title: "Private Treatment Room", category: "Exclusivity", span: "col-span-12 md:col-span-4 row-span-1" },
   { id: 8, url: "/Viproomhair.mp4", type: "video", title: "VIP Hair Wash Station", category: "Comfort", span: "col-span-12 md:col-span-4 row-span-1" },
   { id: 9, url: "/vip.mp4", type: "video", title: "Zen Ambiance", category: "Relaxation", span: "col-span-12 md:col-span-4 row-span-1" }
@@ -65,12 +61,12 @@ export default function HomeFabulous() {
   const [activeMedia, setActiveMedia] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isOpenNow, setIsOpenNow] = useState(false);
+  const [closedText, setClosedText] = useState("Salon Closed — Opens Tomorrow at 11:00 AM");
   const [currentPartnerImg, setCurrentPartnerImg] = useState(0);
   const dailySignatureServices = useMemo(() => fallbackServices, []);
   
   const heroVideoRef = useRef(null);
 
-  // Auto-play Background Video safely
   useEffect(() => {
     if (heroVideoRef.current) {
       heroVideoRef.current.play().catch(error => {
@@ -79,7 +75,6 @@ export default function HomeFabulous() {
     }
   }, []);
 
-  // Retail Carousel Auto-Fader
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPartnerImg((prev) => (prev + 1) % partnerImages.length);
@@ -87,19 +82,29 @@ export default function HomeFabulous() {
     return () => clearInterval(interval);
   }, []);
 
-  // Live Salon Status Checker
+  // Updated Live Salon Status Checker
   useEffect(() => {
     const checkSalonStatus = () => {
       const now = new Date();
       const hours = now.getHours();
+      
       if (hours >= 11 && hours < 21) {
         setIsOpenNow(true);
       } else {
         setIsOpenNow(false);
+        // If it is past midnight but before 11 AM, it opens "Today"
+        if (hours < 11) {
+          setClosedText("Salon Closed — Opens Today at 11:00 AM");
+        } 
+        // If it is 9 PM or later, it opens "Tomorrow"
+        else {
+          setClosedText("Salon Closed — Opens Tomorrow at 11:00 AM");
+        }
       }
     };
+    
     checkSalonStatus();
-    const interval = setInterval(checkSalonStatus, 60000);
+    const interval = setInterval(checkSalonStatus, 60000); // Re-check every 60 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -114,7 +119,6 @@ export default function HomeFabulous() {
   return (
     <div className="flex flex-col min-h-screen w-full bg-rose-50 font-sans overflow-hidden text-slate-900">
       
-      {/* 1. SIGNATURE GLASSMORPHISM HERO */}
       <section className="relative min-h-screen flex items-center justify-center w-full overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
           <video 
@@ -159,7 +163,6 @@ export default function HomeFabulous() {
         </motion.div>
       </section>
 
-      {/* 2. LIVE REAL-TIME SALON HOURS & STATUS BAR */}
       <section className="relative z-20 max-w-5xl mx-auto -mt-10 px-6 w-full">
         <div className="bg-white/90 backdrop-blur-xl border border-rose-200 p-6 md:p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -169,12 +172,14 @@ export default function HomeFabulous() {
             </div>
             <div>
               <h4 className="font-serif text-lg text-indigo-950 font-bold">
-                {isOpenNow ? "We Are Open & Styling Now!" : "Salon Closed — Opens Tomorrow at 11:00 AM"}
+                {isOpenNow ? "We Are Open & Styling Now!" : closedText}
               </h4>
               <p className="text-xs text-slate-500 font-light mt-0.5">
                 {isOpenNow 
                   ? "Master stylists are active on the floor. Walk-ins & instant bookings welcome!" 
-                  : "Secure your chair in advance for tomorrow's preferred slot."}
+                  : (closedText.includes("Today") 
+                      ? "Secure your chair early for today's preferred slot." 
+                      : "Secure your chair in advance for tomorrow's preferred slot.")}
               </p>
             </div>
           </div>
@@ -189,7 +194,6 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 3. TRUST METRICS BAR */}
       <section className="border-y border-rose-200 bg-white/80 backdrop-blur py-10 px-6 mt-12">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div className="flex flex-col items-center">
@@ -215,7 +219,6 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 4. ETHOS STATEMENT (Updated with your Reception Mural) */}
       <section className="py-28 md:py-40 px-6 bg-indigo-950 text-center flex flex-col items-center text-white">
         <motion.div 
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}
@@ -229,7 +232,6 @@ export default function HomeFabulous() {
         </motion.div>
       </section>
 
-      {/* 5. CURATED SIGNATURE TREATMENTS */}
       <section className="py-28 px-6 lg:px-20 bg-rose-50">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
@@ -277,7 +279,6 @@ export default function HomeFabulous() {
         </motion.div>
       </section>
 
-      {/* 6. PREMIUM PARTNERS / RETAIL SHOWCASE WITH SLIDER */}
       <section className="py-24 px-6 lg:px-20 bg-indigo-950 overflow-hidden relative">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           
@@ -354,7 +355,6 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 7. MASSIVE MULTI-MEDIA VISUAL JOURNAL (Contains 9 layout grid) */}
       <section className="py-28 px-6 lg:px-20 bg-white">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-16 text-center">
           <span className="text-pink-500 text-[11px] tracking-[0.3em] uppercase font-bold block mb-3">Visual Journal</span>
@@ -401,7 +401,6 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 8. CLIENT TESTIMONIALS CAROUSEL */}
       <section className="py-28 px-6 bg-rose-100/50 border-t border-rose-200 text-center">
         <div className="max-w-3xl mx-auto">
           <span className="text-pink-600 text-[11px] tracking-[0.3em] uppercase font-bold block mb-3">Client Experiences</span>
@@ -437,7 +436,6 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 9. GOOGLE REVIEWS & DIRECT FEEDBACK SECTION */}
       <section className="py-24 px-6 bg-white text-center border-t border-rose-100">
         <div className="max-w-4xl mx-auto bg-gradient-to-br from-indigo-950 to-rose-950 p-10 md:p-16 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
           
@@ -471,7 +469,6 @@ export default function HomeFabulous() {
         </div>
       </section>
 
-      {/* 10. LIGHTBOX MODAL FOR VIDEOS & IMAGES */}
       <AnimatePresence>
         {activeMedia && (
           <motion.div 
