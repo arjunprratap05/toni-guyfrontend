@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Check, ChevronRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Check, ChevronRight, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
 import { servicesMenu } from './Services'; 
 
 export default function Booking() {
@@ -12,7 +12,9 @@ export default function Booking() {
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('Hair Cut & Styling');
   
-  const [selectedServiceId, setSelectedServiceId] = useState(searchParams.get('service') || null);
+  // NEW: Store an array of selected services instead of just one ID
+  const [selectedServices, setSelectedServices] = useState([]);
+  
   const [selectedArtist, setSelectedArtist] = useState('Any Available Artist');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -29,25 +31,49 @@ export default function Booking() {
   const [isLoadingTimeslots, setIsLoadingTimeslots] = useState(false);
 
   // ==========================================
+  // INITIALIZATION
+  // ==========================================
+  // Pre-select a service if coming from a "Book Now" link with a URL parameter
+  useEffect(() => {
+    const initialServiceId = searchParams.get('service');
+    if (initialServiceId) {
+      const serviceToPreSelect = servicesMenu.find(s => s.id === initialServiceId);
+      if (serviceToPreSelect) {
+        setSelectedServices([serviceToPreSelect]);
+      }
+    }
+  }, [searchParams]);
+
+  // ==========================================
   // AUTOMATED CALCULATIONS
   // ==========================================
-  const selectedService = servicesMenu.find(s => s.id === selectedServiceId);
-  const basePrice = selectedService ? selectedService.price : 0;
+  // NEW: Reduce the array to get the total base price of all selected services
+  const basePrice = selectedServices.reduce((total, service) => total + service.price, 0);
   const gstAmount = basePrice * 0.05;
   const finalTotal = basePrice + gstAmount;
+  
   const categories = [...new Set(servicesMenu.map(item => item.category))];
-
   const todayString = new Date().toISOString().split('T')[0];
+
+  // ==========================================
+  // TOGGLE SERVICE SELECTION
+  // ==========================================
+  const toggleService = (service) => {
+    setSelectedServices(prev => {
+      const isAlreadySelected = prev.some(s => s.id === service.id);
+      if (isAlreadySelected) {
+        // Remove it if already selected
+        return prev.filter(s => s.id !== service.id);
+      } else {
+        // Add it to the array
+        return [...prev, service];
+      }
+    });
+  };
 
   // ==========================================
   // EFFECTS & LOGIC
   // ==========================================
-  useEffect(() => {
-    if (selectedServiceId && step === 1) {
-      setStep(2);
-    }
-  }, [selectedServiceId]);
-
   useEffect(() => {
     if (!selectedDate) {
       setAvailableTimeslots([]);
@@ -151,18 +177,16 @@ export default function Booking() {
       stylistId: selectedArtist === 'Any Available Artist' ? 'any' : selectedArtist, 
       date: selectedDate,
       timeSlot: selectedTime,
-      services: [
-        {
-          serviceId: selectedService.id,
-          name: selectedService.name,
-          price: selectedService.price 
-        }
-      ],
+      // Map the array to the format your backend expects
+      services: selectedServices.map(s => ({
+        serviceId: s.id,
+        name: s.name,
+        price: s.price 
+      })),
       totalAmount: finalTotal
     };
 
     try {
-      // Safe Vite environment variable check
       const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:5000';
 
       const response = await fetch(`${API_URL}/api/appointments/book`, {
@@ -198,7 +222,7 @@ export default function Booking() {
           <CheckCircle2 size={64} className="text-[#D4AF37] mx-auto mb-6" />
           <h2 className="text-3xl font-serif text-[#D4AF37] mb-4">Booking Confirmed!</h2>
           <p className="text-gray-400 text-sm leading-relaxed mb-8">
-            Thank you, {customerName}. Your appointment for {selectedService?.name} on {selectedDate} has been secured. You will receive a WhatsApp confirmation shortly.
+            Thank you, {customerName}. Your appointment for <span className="text-white font-semibold">{selectedServices.map(s => s.name).join(', ')}</span> on {selectedDate} has been secured. You will receive a WhatsApp confirmation shortly.
           </p>
           <button 
             onClick={() => window.location.href = '/'}
@@ -249,10 +273,13 @@ export default function Booking() {
             </button>
           )}
 
-          {/* ================= STEP 1: SELECT SERVICE ================= */}
+          {/* ================= STEP 1: SELECT MULTIPLE SERVICES ================= */}
           {step === 1 && (
             <div>
-              <h2 className="text-xl font-serif text-[#D4AF37] mb-6">1. Select a Service</h2>
+              <div className="flex justify-between items-end mb-6">
+                <h2 className="text-xl font-serif text-[#D4AF37]">1. Select Services</h2>
+                <span className="text-xs text-gray-500 uppercase tracking-widest">{selectedServices.length} Selected</span>
+              </div>
               
               <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-2 border-b border-white/10">
                 {categories.map(cat => (
@@ -268,24 +295,42 @@ export default function Booking() {
                 ))}
               </div>
 
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                {servicesMenu.filter(s => s.category === selectedCategory).map(service => (
-                  <button
-                    key={service.id}
-                    onClick={() => {
-                      setSelectedServiceId(service.id);
-                      setStep(2);
-                    }}
-                    className="w-full text-left p-4 border border-white/5 hover:border-[#D4AF37]/50 bg-black/40 hover:bg-black transition-all flex justify-between items-center group rounded-sm"
-                  >
-                    <div>
-                      <h3 className="text-white font-serif text-lg group-hover:text-[#D4AF37] transition-colors">{service.name}</h3>
-                      <p className="text-gray-500 text-xs mt-1 font-sans">{service.duration} • ₹{service.price} Base</p>
-                    </div>
-                    <ChevronRight className="text-gray-600 group-hover:text-[#D4AF37] transition-colors" size={18} />
-                  </button>
-                ))}
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar mb-6">
+                {servicesMenu.filter(s => s.category === selectedCategory).map(service => {
+                  const isSelected = selectedServices.some(s => s.id === service.id);
+                  return (
+                    <button
+                      key={service.id}
+                      onClick={() => toggleService(service)}
+                      className={`w-full text-left p-4 border transition-all flex justify-between items-center group rounded-sm ${
+                        isSelected 
+                          ? 'border-[#D4AF37] bg-[#D4AF37]/5' 
+                          : 'border-white/5 bg-black/40 hover:bg-black hover:border-[#D4AF37]/50'
+                      }`}
+                    >
+                      <div>
+                        <h3 className={`font-serif text-lg transition-colors ${isSelected ? 'text-[#D4AF37]' : 'text-white group-hover:text-[#D4AF37]'}`}>
+                          {service.name}
+                        </h3>
+                        <p className="text-gray-500 text-xs mt-1 font-sans">{service.duration} • ₹{service.price} Base</p>
+                      </div>
+                      {isSelected ? (
+                        <CheckCircle2 className="text-[#D4AF37]" size={20} />
+                      ) : (
+                        <Circle className="text-gray-600 group-hover:text-[#D4AF37]" size={20} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+
+              <button 
+                disabled={selectedServices.length === 0}
+                onClick={() => setStep(2)}
+                className="w-full py-4 bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] text-xs hover:bg-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-sm"
+              >
+                Continue to Artists
+              </button>
             </div>
           )}
 
@@ -380,26 +425,34 @@ export default function Booking() {
           )}
 
           {/* ================= STEP 4: FINAL DETAILS & MATH ================= */}
-          {step === 4 && selectedService && (
+          {step === 4 && selectedServices.length > 0 && (
             <div>
               <h2 className="text-xl font-serif text-[#D4AF37] mb-6">4. Final Details</h2>
               
               <div className="border border-white/10 bg-black/40 p-6 rounded-sm mb-8">
-                <div className="space-y-2 mb-6 pb-6 border-b border-white/10">
-                  <p className="text-white text-sm flex justify-between font-sans">
-                    <span className="text-gray-500">Service:</span> {selectedService.name}
-                  </p>
+                <div className="space-y-4 mb-6 pb-6 border-b border-white/10">
+                  <div className="text-white text-sm font-sans">
+                    <span className="text-gray-500 block mb-2">Selected Services:</span> 
+                    <div className="space-y-1">
+                      {selectedServices.map(s => (
+                        <div key={s.id} className="flex justify-between pl-2 border-l-2 border-[#D4AF37]/30">
+                          <span>{s.name}</span>
+                          <span className="text-gray-400">₹{s.price}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <p className="text-white text-sm flex justify-between font-sans">
                     <span className="text-gray-500">Artist:</span> {selectedArtist}
                   </p>
                   <p className="text-white text-sm flex justify-between font-sans">
-                    <span className="text-gray-500">Time:</span> {selectedDate} • {selectedTime}
+                    <span className="text-gray-500">Time:</span> <span>{selectedDate} • {selectedTime}</span>
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm text-gray-400 font-sans">
-                    <span>Base Price</span>
+                    <span>Combined Base Price</span>
                     <span>₹{basePrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-400 font-sans">
