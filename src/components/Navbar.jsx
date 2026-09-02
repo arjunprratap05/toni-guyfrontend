@@ -48,6 +48,9 @@ const Navbar = () => {
               <Link to="/about" className="text-sm font-sans uppercase tracking-widest text-brand-white hover:text-brand-gold transition-colors duration-300">
                 About
               </Link>
+              <Link to="/admin/login" className="text-sm font-sans uppercase tracking-widest text-brand-white hover:text-brand-gold transition-colors duration-300">
+                Login
+              </Link>
               
               {/* Direct Link to your exact Google Maps Review Listing */}
               <a 
@@ -105,6 +108,13 @@ const Navbar = () => {
                 className="block px-3 py-3 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 hover:text-brand-gold transition-colors"
               >
                 About
+              </Link>
+              <Link 
+                to="/admin/login" 
+                onClick={closeMobileMenu} 
+                className="block px-3 py-3 text-center text-sm font-sans uppercase tracking-widest border-b border-brand-white/5 hover:text-brand-gold transition-colors"
+              >
+                Login
               </Link>
               <a 
                 href="https://www.google.com/maps/place/Toni%26Guy/@25.6124381,85.1364319,17z/data=!3m1!5s0x39ed5840ffbb2b59:0x2ef74a4a40d2felm4!1s0x39ed58544adc7d7:0x1b0x39ed58544adc7d7" 

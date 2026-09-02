@@ -1,31 +1,49 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/layout/Footer';
+
+// Client Pages
 import Home from './pages/Home';
-import Stylists from './pages/Stylists';
-import Booking from './pages/Booking';
 import Services from './pages/Services';
 import About from './pages/About';
+import Booking from './pages/Booking';
+
+// Admin Pages (inside your Admin folder)
+import AdminLogin from './components/Admin/AdminLogin';
+import AdminDashboard from './components/Admin/AdminDashboard';
+
+// Client Layout: Wraps regular pages with the customer Navbar and Footer
+function ClientLayout() {
+  return (
+    <div className="min-h-screen flex flex-col font-sans bg-brand-black">
+      <Navbar />
+      <main className="flex-grow pt-20">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+}
 
 function App() {
   return (
     <Router>
-      {/* min-h-screen ensures the page takes up the full height, pushing the footer to the bottom */}
-      <div className="min-h-screen flex flex-col font-sans bg-brand-black">
-        <Navbar />
-        
-        {/* flex-grow ensures the main content expands to push the footer down if the page is short */}
-        <main className="flex-grow pt-20"> 
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/about" element={<About />} /> {/* <-- Added About route here */}
-            <Route path="/booking" element={<Booking />} />
-          </Routes>
-        </main>
+      <Routes>
+        {/* 1. PUBLIC CLIENT ROUTES (With Navbar & Footer) */}
+        <Route element={<ClientLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/booking" element={<Booking />} />
+        </Route>
 
-        <Footer /> 
-      </div>
+        {/* 2. ADMIN PORTAL ROUTES (Clean, Fullscreen View) */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+        {/* Redirect "/admin" directly to "/admin/login" */}
+        <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+      </Routes>
     </Router>
   );
 }
