@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, ShieldCheck, Loader2, Mail, Key, ArrowLeft } from 'lucide-react';
+import { Lock, ShieldCheck, Loader2, Mail, Key, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -41,10 +42,11 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-indigo-950 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background Styling */}
       <div className="absolute inset-0 bg-[url('/reception.jpeg')] bg-cover bg-center opacity-10"></div>
       <div className="absolute inset-0 bg-gradient-to-t from-indigo-950 via-indigo-950/80 to-transparent"></div>
 
-      {/* NEW: Back to Website Button */}
+      {/* Back to Website Button */}
       <Link 
         to="/" 
         className="absolute top-6 left-6 md:top-10 md:left-10 z-20 flex items-center gap-2 text-pink-200/70 hover:text-white transition-colors text-xs font-bold font-sans uppercase tracking-widest bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md"
@@ -52,6 +54,7 @@ export default function AdminLogin() {
         <ArrowLeft size={16} /> Back to Website
       </Link>
 
+      {/* Login Box */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
@@ -66,6 +69,7 @@ export default function AdminLogin() {
         
         <form onSubmit={handleLogin} className="flex flex-col gap-5">
           
+          {/* Email Input */}
           <div className="text-left relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Mail className="text-white/50" size={18} />
@@ -75,27 +79,37 @@ export default function AdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Admin Email" 
-              className="w-full pl-12 pr-5 py-4 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+              className="w-full pl-12 pr-5 py-4 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
               required
             />
           </div>
 
+          {/* Password Input with Show/Hide Toggle */}
           <div className="text-left relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Key className="text-white/50" size={18} />
             </div>
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Access Password" 
-              className="w-full pl-12 pr-5 py-4 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+              className="w-full pl-12 pr-12 py-4 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-pink-400 hover:text-pink-300 transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
           
+          {/* Error Message Display */}
           {error && <p className="text-rose-400 text-xs font-semibold bg-rose-500/10 py-2 rounded-lg">{error}</p>}
           
+          {/* Submit Button */}
           <button 
             type="submit" 
             disabled={isLoading}
