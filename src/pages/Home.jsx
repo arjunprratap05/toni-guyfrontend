@@ -67,8 +67,11 @@ export default function HomeFabulous() {
   
   const heroVideoRef = useRef(null);
 
+  // VIDEO AUTOPLAY FIX
   useEffect(() => {
     if (heroVideoRef.current) {
+      heroVideoRef.current.defaultMuted = true;
+      heroVideoRef.current.muted = true;
       heroVideoRef.current.play().catch(error => {
         console.log("Autoplay was prevented by browser:", error);
       });
@@ -82,7 +85,7 @@ export default function HomeFabulous() {
     return () => clearInterval(interval);
   }, []);
 
-  // Updated Live Salon Status Checker
+  // Live Salon Status Checker
   useEffect(() => {
     const checkSalonStatus = () => {
       const now = new Date();
@@ -92,11 +95,9 @@ export default function HomeFabulous() {
         setIsOpenNow(true);
       } else {
         setIsOpenNow(false);
-        // If it is past midnight but before 11 AM, it opens "Today"
         if (hours < 11) {
           setClosedText("Salon Closed — Opens Today at 11:00 AM");
         } 
-        // If it is 9 PM or later, it opens "Tomorrow"
         else {
           setClosedText("Salon Closed — Opens Tomorrow at 11:00 AM");
         }
@@ -104,7 +105,7 @@ export default function HomeFabulous() {
     };
     
     checkSalonStatus();
-    const interval = setInterval(checkSalonStatus, 60000); // Re-check every 60 seconds
+    const interval = setInterval(checkSalonStatus, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -121,14 +122,15 @@ export default function HomeFabulous() {
       
       <section className="relative min-h-screen flex items-center justify-center w-full overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
+          {/* UPDATED HERO VIDEO */}
           <video 
             ref={heroVideoRef}
             src="/video-1.mp4" 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-            preload="auto"
+            autoPlay={true} 
+            loop={true} 
+            muted={true} 
+            playsInline={true}
+            preload="metadata"
             className="w-full h-full object-cover scale-105 filter brightness-90"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/50 via-purple-900/30 to-rose-950/60 mix-blend-multiply" />
@@ -371,14 +373,15 @@ export default function HomeFabulous() {
               className={`relative group cursor-pointer overflow-hidden rounded-3xl shadow-lg border border-rose-100 ${media.span}`}
             >
               {media.type === 'video' ? (
+                // UPDATED GALLERY VIDEO
                 <video 
                   src={media.url} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline 
-                  preload="auto"
+                  autoPlay={true} 
+                  loop={true} 
+                  muted={true} 
+                  playsInline={true} 
+                  preload="metadata"
                 />
               ) : (
                 <img src={media.url} alt={media.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -487,7 +490,15 @@ export default function HomeFabulous() {
               className="w-full max-w-5xl text-center"
             >
               {activeMedia.type === 'video' ? (
-                <video src={activeMedia.url} className="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/10 mx-auto" autoPlay controls playsInline />
+                // UPDATED POPUP VIDEO
+                <video 
+                  src={activeMedia.url} 
+                  className="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/10 mx-auto" 
+                  autoPlay={true} 
+                  controls={true} 
+                  playsInline={true}
+                  muted={true} 
+                />
               ) : (
                 <img src={activeMedia.url} alt={activeMedia.title} className="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/10 mx-auto" />
               )}
