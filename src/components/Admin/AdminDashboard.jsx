@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, User, Phone, Mail, LogOut, CheckCircle, Search, Scissors, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, LogOut, CheckCircle, Search, Scissors, TrendingUp, XCircle } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
@@ -72,15 +72,18 @@ export default function AdminDashboard() {
     navigate('/admin/login');
   };
 
-  const pendingCount = bookings.filter(b => b.status !== 'completed').length;
+  // CALCULATING ALL COUNTS FOR THE TOP CARDS
+  const pendingCount = bookings.filter(b => !['completed', 'no-show'].includes(b.status)).length;
   const completedCount = bookings.filter(b => b.status === 'completed').length;
+  const noShowCount = bookings.filter(b => b.status === 'no-show').length; // NEW: Count missed appointments
   
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           booking.phone?.includes(searchTerm);
     const matchesFilter = filter === 'all' || 
                          (filter === 'completed' && booking.status === 'completed') ||
-                         (filter === 'confirmed' && booking.status !== 'completed');
+                         (filter === 'no-show' && booking.status === 'no-show') ||
+                         (filter === 'confirmed' && !['completed', 'no-show'].includes(booking.status));
     return matchesSearch && matchesFilter;
   });
 
@@ -105,7 +108,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* UPDATED: Changed to 4 columns and added the No-Show Box */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Total Bookings</p>
@@ -113,6 +117,7 @@ export default function AdminDashboard() {
             </div>
             <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500"><TrendingUp size={20} /></div>
           </div>
+          
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Action Required</p>
@@ -120,12 +125,21 @@ export default function AdminDashboard() {
             </div>
             <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-500"><Calendar size={20} /></div>
           </div>
+          
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Completed</p>
               <h3 className="text-3xl font-serif text-emerald-600">{completedCount}</h3>
             </div>
             <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500"><CheckCircle size={20} /></div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">No-Shows</p>
+              <h3 className="text-3xl font-serif text-rose-600">{noShowCount}</h3>
+            </div>
+            <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-500"><XCircle size={20} /></div>
           </div>
         </div>
 
@@ -147,12 +161,12 @@ export default function AdminDashboard() {
             />
           </div>
           
-          <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200 w-full md:w-auto">
-            {['all', 'confirmed', 'completed'].map((f) => (
+          <div className="flex flex-wrap bg-slate-50 p-1 rounded-xl border border-slate-200 w-full md:w-auto">
+            {['all', 'confirmed', 'completed', 'no-show'].map((f) => (
               <button 
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${filter === f ? 'bg-white text-indigo-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${filter === f ? 'bg-white text-indigo-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 {f}
               </button>
@@ -178,7 +192,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredBookings.map((booking) => (
-                    <tr key={booking._id} className={`transition-colors ${booking.status === 'completed' ? 'bg-slate-50/50 opacity-75' : 'hover:bg-slate-50'}`}>
+                    <tr key={booking._id} className={`transition-colors ${['completed', 'no-show'].includes(booking.status) ? 'bg-slate-50/50 opacity-75' : 'hover:bg-slate-50'}`}>
                       <td className="p-6">
                         <div className="font-semibold text-indigo-950 flex items-center gap-2 text-sm">
                           <User size={14} className="text-slate-400" /> {booking.name}
@@ -200,28 +214,30 @@ export default function AdminDashboard() {
                       </td>
                       <td className="p-6">
                         <div className="font-medium text-slate-800 flex items-center gap-2 text-sm">
-                          <Calendar size={14} className={booking.status === 'completed' ? 'text-slate-400' : 'text-pink-500'} /> 
+                          <Calendar size={14} className={['completed', 'no-show'].includes(booking.status) ? 'text-slate-400' : 'text-pink-500'} /> 
                           {new Date(booking.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className="text-sm text-slate-500 flex items-center gap-2 mt-1.5">
-                          <Clock size={14} className={booking.status === 'completed' ? 'text-slate-400' : 'text-amber-500'} /> {booking.timeSlot}
+                          <Clock size={14} className={['completed', 'no-show'].includes(booking.status) ? 'text-slate-400' : 'text-amber-500'} /> {booking.timeSlot}
                         </div>
                       </td>
                       <td className="p-6">
                         <div className="flex flex-col gap-2 items-start">
                           <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 px-3 py-1.5 rounded-full w-fit ${
                             booking.status === 'completed' ? 'text-indigo-600 bg-indigo-50 border border-indigo-100' : 
+                            booking.status === 'no-show' ? 'text-rose-600 bg-rose-50 border border-rose-100' : 
                             booking.status === 'in-progress' ? 'text-amber-600 bg-amber-50 border border-amber-100' : 
                             'text-emerald-600 bg-emerald-50'
                           }`}>
                             {booking.status === 'completed' && <CheckCircle size={12} className="text-indigo-500" />}
+                            {booking.status === 'no-show' && <XCircle size={12} className="text-rose-500" />}
                             {booking.status === 'in-progress' && <Clock size={12} className="text-amber-500 animate-spin-slow" />}
                             {(!booking.status || booking.status === 'confirmed') && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>}
                             {booking.status || 'Confirmed'}
                           </span>
                           
-                          {booking.status !== 'completed' && (
-                            <div className="flex gap-3 mt-1">
+                          {!['completed', 'no-show'].includes(booking.status) && (
+                            <div className="flex flex-wrap gap-3 mt-1">
                               {booking.status !== 'in-progress' && (
                                 <button 
                                   onClick={() => handleUpdateStatus(booking._id, 'in-progress')}
@@ -236,6 +252,13 @@ export default function AdminDashboard() {
                                 className="text-[10px] text-slate-500 hover:text-indigo-600 underline underline-offset-2 transition-colors font-semibold"
                               >
                                 Mark Completed
+                              </button>
+
+                              <button 
+                                onClick={() => handleUpdateStatus(booking._id, 'no-show')}
+                                className="text-[10px] text-slate-500 hover:text-rose-600 underline underline-offset-2 transition-colors font-semibold"
+                              >
+                                Mark No-Show
                               </button>
                             </div>
                           )}

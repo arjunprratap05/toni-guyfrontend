@@ -12,7 +12,6 @@ export default function Booking() {
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('Hair Cut & Styling');
   
-  // NEW: Store an array of selected services instead of just one ID
   const [selectedServices, setSelectedServices] = useState([]);
   
   const [selectedArtist, setSelectedArtist] = useState('Any Available Artist');
@@ -33,7 +32,6 @@ export default function Booking() {
   // ==========================================
   // INITIALIZATION
   // ==========================================
-  // Pre-select a service if coming from a "Book Now" link with a URL parameter
   useEffect(() => {
     const initialServiceId = searchParams.get('service');
     if (initialServiceId) {
@@ -47,7 +45,6 @@ export default function Booking() {
   // ==========================================
   // AUTOMATED CALCULATIONS
   // ==========================================
-  // NEW: Reduce the array to get the total base price of all selected services
   const basePrice = selectedServices.reduce((total, service) => total + service.price, 0);
   const gstAmount = basePrice * 0.05;
   const finalTotal = basePrice + gstAmount;
@@ -62,10 +59,8 @@ export default function Booking() {
     setSelectedServices(prev => {
       const isAlreadySelected = prev.some(s => s.id === service.id);
       if (isAlreadySelected) {
-        // Remove it if already selected
         return prev.filter(s => s.id !== service.id);
       } else {
-        // Add it to the array
         return [...prev, service];
       }
     });
@@ -87,12 +82,13 @@ export default function Booking() {
       try {
         await new Promise(resolve => setTimeout(resolve, 800)); 
         
+        // UPDATED: Removed 10:00 AM slots, starts at 11:00 AM, goes until 8:00 PM
         const rawStartTimes = [
-          "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", 
+          "11:00 AM", "11:30 AM", 
           "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", 
           "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", 
           "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", 
-          "06:00 PM", "06:30 PM", "07:00 PM"
+          "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM", "08:00 PM"
         ];
         
         const filterPastTimes = (slots) => {
@@ -177,7 +173,6 @@ export default function Booking() {
       stylistId: selectedArtist === 'Any Available Artist' ? 'any' : selectedArtist, 
       date: selectedDate,
       timeSlot: selectedTime,
-      // Map the array to the format your backend expects
       services: selectedServices.map(s => ({
         serviceId: s.id,
         name: s.name,
