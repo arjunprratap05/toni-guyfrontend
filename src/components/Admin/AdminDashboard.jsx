@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, User, Phone, Mail, LogOut, CheckCircle, Search, Scissors, TrendingUp, XCircle } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, LogOut, CheckCircle, Search, Scissors, TrendingUp, XCircle, AlertTriangle, Unlock, X } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  const [isForceClosed, setIsForceClosed] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [closeReason, setCloseReason] = useState('');
+  const [closeUntil, setCloseUntil] = useState('');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
@@ -17,12 +22,71 @@ export default function AdminDashboard() {
       navigate('/admin/login'); 
     } else {
       fetchBookings(true);
+      fetchSalonStatus();
+      
       const intervalId = setInterval(() => {
         fetchBookings(false); 
       }, 15000); 
       return () => clearInterval(intervalId);
     }
   }, [navigate]);
+
+  const fetchSalonStatus = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/appointments/salon-status`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsForceClosed(data.isForceClosed);
+      }
+    } catch (err) {
+      console.error("Could not fetch salon status", err);
+    }
+  };
+
+  const handleApplyForceClose = async () => {
+    if (!closeReason || !closeUntil) {
+      alert("Please provide both a reason and a return date.");
+      return;
+    }
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/appointments/salon-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isForceClosed: true, reason: closeReason, closeUntil: closeUntil })
+      });
+
+      if (response.ok) {
+        setIsForceClosed(true);
+        setShowCloseModal(false);
+        setCloseReason('');
+        setCloseUntil('');
+        alert("Salon is now scheduled as CLOSED on the live website.");
+      }
+    } catch (err) {
+      alert("Failed to update salon status.");
+    }
+  };
+
+  const handleReopenSalon = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/appointments/salon-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isForceClosed: false, reason: "", closeUntil: null })
+      });
+
+      if (response.ok) {
+        setIsForceClosed(false);
+        alert("Salon is OPEN normally again.");
+      }
+    } catch (err) {
+      alert("Failed to update salon status.");
+    }
+  };
 
   const fetchBookings = async (showLoader = true) => {
     if (showLoader) setLoading(true);
@@ -72,10 +136,9 @@ export default function AdminDashboard() {
     navigate('/admin/login');
   };
 
-  // CALCULATING ALL COUNTS FOR THE TOP CARDS
   const pendingCount = bookings.filter(b => !['completed', 'no-show'].includes(b.status)).length;
   const completedCount = bookings.filter(b => b.status === 'completed').length;
-  const noShowCount = bookings.filter(b => b.status === 'no-show').length; // NEW: Count missed appointments
+  const noShowCount = bookings.filter(b => b.status === 'no-show').length;
   
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -88,17 +151,85 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans text-slate-900 relative">
+      
+      {/* NEW: Force Close Modal */}
+      {showCloseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950/80 backdrop-blur-sm p-4">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full relative">
+            <button onClick={() => setShowCloseModal(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800">
+              <X size={20} />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif text-indigo-950">Force Close Salon</h3>
+                <p className="text-xs text-slate-500">Update the live site schedule.</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Public Reason</label>
+                <input 
+                  type="text" 
+                  value={closeReason}
+                  onChange={(e) => setCloseReason(e.target.value)}
+                  placeholder="e.g., Closed for Diwali Holidays" 
+                  className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Closed Until Date</label>
+                <input 
+                  type="date" 
+                  value={closeUntil}
+                  onChange={(e) => setCloseUntil(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                />
+                <p className="text-[10px] text-slate-400 mt-2">The salon will automatically reopen at 11:00 AM on this date.</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleApplyForceClose}
+              className="w-full py-4 bg-rose-600 text-white font-bold uppercase tracking-widest text-xs hover:bg-rose-700 transition-all rounded-xl shadow-lg shadow-rose-600/30"
+            >
+              Apply & Close Salon
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-6">
           <div>
             <span className="text-pink-500 text-[10px] tracking-[0.3em] uppercase font-bold block mb-2">Live Portal</span>
             <h1 className="text-3xl md:text-5xl font-serif text-indigo-950">Booking Overview</h1>
             <p className="text-slate-500 mt-2 text-sm">Manage all incoming appointments for TONI&GUY Patna.</p>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            {/* UPDATED: Dynamic Button opens Modal or Reopens directly */}
+            {isForceClosed ? (
+              <button 
+                onClick={handleReopenSalon} 
+                className="text-xs uppercase tracking-widest font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 shadow-sm border bg-rose-600 text-white border-rose-700 hover:bg-rose-700 animate-pulse"
+              >
+                <Unlock size={14} /> Reopen Salon Now
+              </button>
+            ) : (
+              <button 
+                onClick={() => setShowCloseModal(true)} 
+                className="text-xs uppercase tracking-widest font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 shadow-sm border bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
+              >
+                <AlertTriangle size={14} /> Force Close Salon
+              </button>
+            )}
+
             <button onClick={() => fetchBookings(true)} className="text-xs uppercase tracking-widest font-bold bg-white border border-slate-200 px-5 py-3 rounded-xl hover:bg-slate-100 transition shadow-sm">
               Refresh Data
             </button>
@@ -108,7 +239,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* UPDATED: Changed to 4 columns and added the No-Show Box */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>

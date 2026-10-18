@@ -87,7 +87,37 @@ export default function HomeFabulous() {
 
   // Live Salon Status Checker
   useEffect(() => {
-    const checkSalonStatus = () => {
+    const checkSalonStatus = async () => {
+      let isForceClosedByAdmin = false;
+      let closeReason = "";
+      let returnDateStr = "";
+
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/appointments/salon-status`);
+        if (response.ok) {
+          const data = await response.json();
+          isForceClosedByAdmin = data.isForceClosed;
+          closeReason = data.reason;
+          returnDateStr = data.closeUntil;
+        }
+      } catch (err) {
+        console.error("Could not check force-close status");
+      }
+
+      if (isForceClosedByAdmin) {
+        setIsOpenNow(false);
+        // Format the return date beautifully
+        let formattedDate = "";
+        if (returnDateStr) {
+          const dateObj = new Date(returnDateStr);
+          formattedDate = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+        }
+        setClosedText(`Closed: ${closeReason || 'Management Update'} ${formattedDate ? `— Opens ${formattedDate}` : ''}`);
+        return; 
+      }
+
+      // Normal Operating Hours Fallback
       const now = new Date();
       const hours = now.getHours();
       
@@ -97,8 +127,7 @@ export default function HomeFabulous() {
         setIsOpenNow(false);
         if (hours < 11) {
           setClosedText("Salon Closed — Opens Today at 11:00 AM");
-        } 
-        else {
+        } else {
           setClosedText("Salon Closed — Opens Tomorrow at 11:00 AM");
         }
       }
