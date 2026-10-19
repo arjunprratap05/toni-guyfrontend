@@ -58,13 +58,17 @@ const partnerImages = [
 ];
 
 export default function HomeFabulous() {
+  // ALL STATES MUST BE INSIDE THIS FUNCTION
   const [activeMedia, setActiveMedia] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [isOpenNow, setIsOpenNow] = useState(false);
-  const [closedText, setClosedText] = useState("Salon Closed — Opens Tomorrow at 11:00 AM");
   const [currentPartnerImg, setCurrentPartnerImg] = useState(0);
-  const dailySignatureServices = useMemo(() => fallbackServices, []);
   
+  // Status States
+  const [isOpenNow, setIsOpenNow] = useState(false);
+  const [closedText, setClosedText] = useState("");
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
+
+  const dailySignatureServices = useMemo(() => fallbackServices, []);
   const heroVideoRef = useRef(null);
 
   // VIDEO AUTOPLAY FIX
@@ -85,7 +89,7 @@ export default function HomeFabulous() {
     return () => clearInterval(interval);
   }, []);
 
-  // Live Salon Status Checker
+  // SMART SALON STATUS CHECKER
   useEffect(() => {
     const checkSalonStatus = async () => {
       let isForceClosedByAdmin = false;
@@ -107,17 +111,17 @@ export default function HomeFabulous() {
 
       if (isForceClosedByAdmin) {
         setIsOpenNow(false);
-        // Format the return date beautifully
         let formattedDate = "";
         if (returnDateStr) {
           const dateObj = new Date(returnDateStr);
           formattedDate = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
         }
         setClosedText(`Closed: ${closeReason || 'Management Update'} ${formattedDate ? `— Opens ${formattedDate}` : ''}`);
+        setIsStatusLoading(false); 
         return; 
       }
 
-      // Normal Operating Hours Fallback
+      // Normal Operating Hours
       const now = new Date();
       const hours = now.getHours();
       
@@ -131,6 +135,7 @@ export default function HomeFabulous() {
           setClosedText("Salon Closed — Opens Tomorrow at 11:00 AM");
         }
       }
+      setIsStatusLoading(false); 
     };
     
     checkSalonStatus();
@@ -151,7 +156,6 @@ export default function HomeFabulous() {
       
       <section className="relative min-h-screen flex items-center justify-center w-full overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
-          {/* UPDATED HERO VIDEO */}
           <video 
             ref={heroVideoRef}
             src="/video-1.mp4" 
@@ -198,15 +202,16 @@ export default function HomeFabulous() {
         <div className="bg-white/90 backdrop-blur-xl border border-rose-200 p-6 md:p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="relative flex items-center justify-center">
-              <span className={`w-4 h-4 rounded-full ${isOpenNow ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-              <span className={`absolute w-7 h-7 rounded-full animate-ping opacity-75 ${isOpenNow ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+              <span className={`w-4 h-4 rounded-full ${isStatusLoading ? 'bg-slate-300' : isOpenNow ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+              {!isStatusLoading && <span className={`absolute w-7 h-7 rounded-full animate-ping opacity-75 ${isOpenNow ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>}
             </div>
             <div>
               <h4 className="font-serif text-lg text-indigo-950 font-bold">
-                {isOpenNow ? "We Are Open & Styling Now!" : closedText}
+                {isStatusLoading ? "Syncing Schedule..." : (isOpenNow ? "We Are Open & Styling Now!" : closedText)}
               </h4>
               <p className="text-xs text-slate-500 font-light mt-0.5">
-                {isOpenNow 
+                {isStatusLoading ? "Fetching live status from the salon." : 
+                 isOpenNow 
                   ? "Master stylists are active on the floor. Walk-ins & instant bookings welcome!" 
                   : (closedText.includes("Today") 
                       ? "Secure your chair early for today's preferred slot." 
@@ -402,7 +407,6 @@ export default function HomeFabulous() {
               className={`relative group cursor-pointer overflow-hidden rounded-3xl shadow-lg border border-rose-100 ${media.span}`}
             >
               {media.type === 'video' ? (
-                // UPDATED GALLERY VIDEO
                 <video 
                   src={media.url} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -519,7 +523,6 @@ export default function HomeFabulous() {
               className="w-full max-w-5xl text-center"
             >
               {activeMedia.type === 'video' ? (
-                // UPDATED POPUP VIDEO
                 <video 
                   src={activeMedia.url} 
                   className="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/10 mx-auto" 
